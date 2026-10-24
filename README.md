@@ -12,7 +12,7 @@ ESP32 based coursework project for a pilot covering the CoCIS main entrance and 
 
 ## Current status
 
-The repository is at the ESP-IDF starter stage. `src/main.c` contains only an empty `app_main`, and `diagram.json` is empty. The implementation plan and proposed issue sequence are in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md). No hardware behavior is implemented yet.
+The repository is at the ESP-IDF starter stage. `src/main.c` contains only an empty `app_main`, and `diagram.json` is empty. The implementation plan and GitHub issue sequence are in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md). No hardware behavior is implemented yet.
 
 ## Build and simulation
 
