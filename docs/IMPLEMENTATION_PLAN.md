@@ -43,6 +43,8 @@ Issues #1-18 have been created in GitHub in this dependency order. Each issue bo
 
 ## Branch and review policy
 
+The work to protect `main` is tracked in [issue #19](https://github.com/ledge-stack/Embedded-Course-Work/issues/19). The rule must be applied and verified in GitHub repository settings before treating the branch as protected.
+
 For every issue, create a feature branch, open a pull request against `main`, reference the issue, and request a teammate review. Protect `main` with a GitHub branch ruleset or classic branch protection that:
 
 - requires a pull request before changes can reach `main`;
@@ -56,21 +58,3 @@ Apply the rules to the exact `main` branch and verify the saved settings in GitH
 ## Completion checks
 
 Each feature issue should link to its implementation PR and include the Wokwi scenario or build evidence relevant to its behavior. Integration is complete only when the full multi-terminal flow is demonstrated, not just when individual components compile. Keep the report, Wokwi link, member details, individual contributions and videos in the final release checklist.
-## Summary
-
-<!-- What changed and why? -->
-
-## Related issue
-
-Closes #
-
-## Verification
-
-- [ ] PlatformIO/ESP-IDF build result is recorded.
-- [ ] Relevant Wokwi scenario or hardware behavior is described (when applicable).
-- [ ] Shared data structures and message format changes were coordinated with the team.
-- [ ] A teammate has reviewed the change.
-
-## Contributor walkthrough
-
-<!-- Note which module/feature you can explain in your individual demonstration. -->
