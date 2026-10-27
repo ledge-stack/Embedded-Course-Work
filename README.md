@@ -12,7 +12,7 @@ ESP32 based coursework project for a pilot covering the CoCIS main entrance and 
 
 ## Current status
 
-The repository is at the ESP-IDF starter stage. `src/main.c` contains only an empty `app_main`, and `diagram.json` is empty. The implementation plan and GitHub issue sequence are in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md). No hardware behavior is implemented yet.
+Trevor's room-control, communication and synchronization modules are implemented, with portable C tests and a threaded adapter test. The default build demonstrates three logical terminals on one ESP32 with two PIR sensors, two LEDs and an outage switch. Separate coordinator/room firmware roles use UART for physical deployment. See [`docs/TREVOR_GUIDE.md`](docs/TREVOR_GUIDE.md) for pins, protocol, integration APIs, limitations and demonstration steps. Entrance access, SD persistence and authenticated management remain team integration work. The original backlog is in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md).
 
 ## Build and simulation
 
@@ -22,7 +22,7 @@ This project uses PlatformIO's `esp32dev` environment with the ESP-IDF framework
 pio run
 ```
 
-Open the project in Wokwi after adding the circuit to `diagram.json`. [`wokwi.toml`](wokwi.toml) points Wokwi to the PlatformIO build outputs under `.pio/build/esp32dev/`. Build successfully before starting the simulation so those firmware files exist.
+Open the project in Wokwi using the supplied `diagram.json`. [`wokwi.toml`](wokwi.toml) points to the PlatformIO demo outputs under `.pio/build/esp32dev/`. Build successfully before starting the simulation. Wokwi does not support multiple wired microcontrollers in one simulation, so this circuit deliberately demonstrates logical terminals on one board; physical UART communication requires separate ESP32 boards.
 
 The Wokwi project link will be added here when the shared simulation is created.
 
@@ -43,4 +43,4 @@ Work from GitHub issues. Use one feature branch per issue, open a pull request t
 
 ## Project layout
 
-The planned module boundaries are `entrance`, `rooms`, `comms`, `storage`, `cli`, `auth` and `common`. The implementation plan defines the interfaces and work sequence before those modules are added.
+The planned team module boundaries are `entrance`, `rooms`, `comms`, `storage`, `cli`, `auth` and `common`. Trevor's portable room/protocol logic is in `src/trevor/core.c`; its ESP-IDF adapter is in `src/trevor/runtime.c`, with public headers under `include/trevor/`. Other members can integrate through these headers without depending on task internals.
