@@ -7,11 +7,24 @@
 #include <stddef.h>
 #include <stdint.h>
 
+typedef struct {
+    bool clock_valid;
+    bool is_open;
+    unsigned local_minute;
+    size_t inside_count;
+    system_access_schedule schedule;
+    bool has_last_event;
+    char last_person[SYSTEM_NAME_MAX_BYTES];
+    char last_action[8];
+    char last_time[6];
+} entrance_status;
+
 esp_err_t entrance_runtime_start(void);
 bool entrance_runtime_snapshot(system_user *users, bool *inside,
     size_t capacity, size_t *user_count, size_t *inside_count,
     system_access_schedule *schedule);
-/* Called by Edward's authenticated CLI after validating admin credentials. */
+/* Schedule writes must be made only after caller-side administrator authentication. */
 esp_err_t entrance_runtime_set_schedule(system_access_schedule schedule);
+bool entrance_runtime_status(entrance_status *out);
 
 #endif

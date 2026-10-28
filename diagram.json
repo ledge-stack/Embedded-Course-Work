@@ -15,63 +15,86 @@
       "id": "pir1",
       "top": -100,
       "left": -220,
-      "attrs": { "delayTime": "1", "inhibitTime": "0.1" }
+      "attrs": {
+        "delayTime": "1",
+        "inhibitTime": "0.1"
+      }
     },
     {
       "type": "wokwi-pir-motion-sensor",
       "id": "pir2",
       "top": -100,
       "left": 250,
-      "attrs": { "delayTime": "1", "inhibitTime": "0.1" }
+      "attrs": {
+        "delayTime": "1",
+        "inhibitTime": "0.1"
+      }
     },
     {
       "type": "wokwi-led",
       "id": "light1",
       "top": 30,
       "left": -160,
-      "attrs": { "color": "yellow", "label": "Room 1 light" }
+      "attrs": {
+        "color": "yellow",
+        "label": "Room 1 light"
+      }
     },
     {
       "type": "wokwi-led",
       "id": "light2",
       "top": 30,
       "left": 280,
-      "attrs": { "color": "green", "label": "Room 2 light" }
+      "attrs": {
+        "color": "green",
+        "label": "Room 2 light"
+      }
     },
     {
       "type": "wokwi-resistor",
       "id": "r1",
       "top": 85,
       "left": -155,
-      "attrs": { "value": "330" }
+      "attrs": {
+        "value": "330"
+      }
     },
     {
       "type": "wokwi-resistor",
       "id": "r2",
       "top": 85,
       "left": 275,
-      "attrs": { "value": "330" }
+      "attrs": {
+        "value": "330"
+      }
     },
     {
       "type": "wokwi-slide-switch",
       "id": "link",
       "top": 360,
       "left": 25,
-      "attrs": { "value": "1", "bounce": "0" }
+      "attrs": {
+        "value": "1",
+        "bounce": "0"
+      }
     },
     {
       "type": "board-mfrc522",
       "id": "entry_rfid",
       "top": -250,
       "left": -350,
-      "attrs": { "uid": "DE:AD:BE:EF" }
+      "attrs": {
+        "uid": "DE:AD:BE:EF"
+      }
     },
     {
       "type": "board-mfrc522",
       "id": "exit_rfid",
       "top": -250,
       "left": 330,
-      "attrs": { "uid": "DE:AD:BE:EF" }
+      "attrs": {
+        "uid": "DE:AD:BE:EF"
+      }
     },
     {
       "type": "wokwi-microsd-card",
@@ -81,132 +104,365 @@
       "attrs": {}
     },
     {
-      "type": "wokwi-led",
-      "id": "entry_led",
-      "top": 325,
-      "left": -165,
-      "attrs": { "color": "blue", "label": "Entry granted" }
-    },
-    {
-      "type": "wokwi-led",
-      "id": "exit_led",
-      "top": 325,
-      "left": 285,
-      "attrs": { "color": "green", "label": "Exit granted" }
-    },
-    {
-      "type": "wokwi-led",
-      "id": "entry_denied",
-      "top": 325,
-      "left": -60,
-      "attrs": { "color": "red", "label": "Entry denied" }
-    },
-    {
-      "type": "wokwi-led",
-      "id": "exit_denied",
-      "top": 325,
-      "left": 390,
-      "attrs": { "color": "red", "label": "Exit denied" }
-    },
-    {
-      "type": "wokwi-resistor",
-      "id": "entry_r",
-      "top": 390,
-      "left": -160,
-      "attrs": { "value": "330" }
-    },
-    {
-      "type": "wokwi-resistor",
-      "id": "exit_r",
-      "top": 390,
-      "left": 280,
-      "attrs": { "value": "330" }
-    },
-    {
-      "type": "wokwi-resistor",
-      "id": "entry_denied_r",
-      "top": 390,
-      "left": -55,
-      "attrs": { "value": "330" }
-    },
-    {
-      "type": "wokwi-resistor",
-      "id": "exit_denied_r",
-      "top": 390,
-      "left": 385,
-      "attrs": { "value": "330" }
-    },
-    {
       "type": "wokwi-text",
       "id": "title",
       "top": -315,
       "left": -180,
-      "attrs": { "text": "ONE ESP32: entrance + two rooms (logical terminals)" }
+      "attrs": {
+        "text": "ONE ESP32 SIMULATION: entrance terminal + two logical rooms"
+      }
     },
     {
       "type": "wokwi-text",
       "id": "hint",
       "top": 445,
       "left": -300,
-      "attrs": { "text": "RFID blue=DE:AD:BE:EF, green=11:22:33:44 | tap reader to present card" }
+      "attrs": {
+        "text": "Admin keypad: A, PIN 2468, #, then 1/2 to set opening/closing time"
+      }
     },
     {
       "type": "wokwi-text",
       "id": "net_hint",
       "top": 475,
       "left": -300,
-      "attrs": { "text": "SNTP uses Wokwi-GUEST; serial monitor 115200 baud" }
+      "attrs": {
+        "text": "LCD status + Wi-Fi dashboard; browser access uses Wokwi Private IoT Gateway"
+      }
+    },
+    {
+      "type": "wokwi-lcd2004",
+      "id": "lcd",
+      "top": 500,
+      "left": -400,
+      "attrs": {
+        "pins": "i2c",
+        "i2cAddress": "0x27"
+      }
+    },
+    {
+      "type": "wokwi-membrane-keypad",
+      "id": "keypad",
+      "top": 520,
+      "left": 50,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "kp_pull1",
+      "top": 620,
+      "left": 420,
+      "attrs": {
+        "value": "10k"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "kp_pull2",
+      "top": 620,
+      "left": 465,
+      "attrs": {
+        "value": "10k"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "kp_pull3",
+      "top": 620,
+      "left": 510,
+      "attrs": {
+        "value": "10k"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "kp_pull4",
+      "top": 620,
+      "left": 555,
+      "attrs": {
+        "value": "10k"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "sd_cs_pull",
+      "top": 680,
+      "left": 610,
+      "attrs": {
+        "value": "10k"
+      }
     }
   ],
   "connections": [
-    [ "esp:TX0", "$serialMonitor:RX", "", [] ],
-    [ "esp:RX0", "$serialMonitor:TX", "", [] ],
-    [ "pir1:VCC", "esp:VIN", "red", [] ],
-    [ "pir1:GND", "esp:GND.1", "black", [] ],
-    [ "pir1:OUT", "esp:D27", "green", [] ],
-    [ "pir2:VCC", "esp:VIN", "red", [] ],
-    [ "pir2:GND", "esp:GND.1", "black", [] ],
-    [ "pir2:OUT", "esp:D33", "green", [] ],
-    [ "esp:D26", "light1:A", "orange", [] ],
-    [ "light1:C", "r1:1", "black", [] ],
-    [ "r1:2", "esp:GND.1", "black", [] ],
-    [ "esp:D25", "light2:A", "orange", [] ],
-    [ "light2:C", "r2:1", "black", [] ],
-    [ "r2:2", "esp:GND.1", "black", [] ],
-    [ "link:2", "esp:D32", "blue", [] ],
-    [ "link:1", "esp:GND.1", "black", [] ],
-    [ "link:3", "esp:3V3", "red", [] ],
-    [ "entry_rfid:SCK", "esp:D21", "blue", [] ],
-    [ "exit_rfid:SCK", "esp:D21", "blue", [] ],
-    [ "entry_rfid:MOSI", "esp:D22", "orange", [] ],
-    [ "exit_rfid:MOSI", "esp:D22", "orange", [] ],
-    [ "entry_rfid:MISO", "esp:D23", "green", [] ],
-    [ "exit_rfid:MISO", "esp:D23", "green", [] ],
-    [ "entry_rfid:SDA", "esp:D5", "purple", [] ],
-    [ "exit_rfid:SDA", "esp:D13", "purple", [] ],
-    [ "entry_rfid:RST", "esp:D4", "yellow", [] ],
-    [ "exit_rfid:RST", "esp:D4", "yellow", [] ],
-    [ "entry_rfid:3.3V", "esp:3V3", "red", [] ],
-    [ "exit_rfid:3.3V", "esp:3V3", "red", [] ],
-    [ "entry_rfid:GND", "esp:GND.1", "black", [] ],
-    [ "exit_rfid:GND", "esp:GND.1", "black", [] ],
-    [ "sdcard:VCC", "esp:3V3", "red", [] ],
-    [ "sdcard:GND", "esp:GND.1", "black", [] ],
-    [ "sdcard:SCK", "esp:D21", "blue", [] ],
-    [ "sdcard:DI", "esp:D22", "orange", [] ],
-    [ "sdcard:DO", "esp:D23", "green", [] ],
-    [ "sdcard:CS", "esp:D18", "purple", [] ],
-    [ "esp:D14", "entry_led:A", "blue", [] ],
-    [ "entry_led:C", "entry_r:1", "black", [] ],
-    [ "entry_r:2", "esp:GND.1", "black", [] ],
-    [ "esp:D15", "exit_led:A", "green", [] ],
-    [ "exit_led:C", "exit_r:1", "black", [] ],
-    [ "exit_r:2", "esp:GND.1", "black", [] ],
-    [ "esp:D16", "entry_denied:A", "red", [] ],
-    [ "entry_denied:C", "entry_denied_r:1", "black", [] ],
-    [ "entry_denied_r:2", "esp:GND.1", "black", [] ],
-    [ "esp:D17", "exit_denied:A", "red", [] ],
-    [ "exit_denied:C", "exit_denied_r:1", "black", [] ],
-    [ "exit_denied_r:2", "esp:GND.1", "black", [] ]
+    [
+      "esp:TX0",
+      "$serialMonitor:RX",
+      "",
+      []
+    ],
+    [
+      "esp:RX0",
+      "$serialMonitor:TX",
+      "",
+      []
+    ],
+    [
+      "pir1:VCC",
+      "esp:VIN",
+      "red",
+      []
+    ],
+    [
+      "pir1:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "pir1:OUT",
+      "esp:D27",
+      "green",
+      []
+    ],
+    [
+      "pir2:VCC",
+      "esp:VIN",
+      "red",
+      []
+    ],
+    [
+      "pir2:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "pir2:OUT",
+      "esp:D33",
+      "green",
+      []
+    ],
+    [
+      "esp:D26",
+      "light1:A",
+      "orange",
+      []
+    ],
+    [
+      "light1:C",
+      "r1:1",
+      "black",
+      []
+    ],
+    [
+      "r1:2",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "esp:D25",
+      "light2:A",
+      "orange",
+      []
+    ],
+    [
+      "light2:C",
+      "r2:1",
+      "black",
+      []
+    ],
+    [
+      "r2:2",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "link:2",
+      "esp:D32",
+      "blue",
+      []
+    ],
+    [
+      "link:1",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "link:3",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "sdcard:VCC",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "sdcard:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "sdcard:SCK",
+      "esp:D18",
+      "blue",
+      []
+    ],
+    [
+      "sdcard:DI",
+      "esp:D23",
+      "orange",
+      []
+    ],
+    [
+      "sdcard:DO",
+      "esp:D19",
+      "green",
+      []
+    ],
+    [
+      "sdcard:CS",
+      "esp:D0",
+      "purple",
+      []
+    ],
+    [
+      "lcd:VCC",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "lcd:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "lcd:SDA",
+      "esp:D21",
+      "green",
+      []
+    ],
+    [
+      "lcd:SCL",
+      "esp:D22",
+      "blue",
+      []
+    ],
+    [
+      "keypad:R1",
+      "esp:D14",
+      "blue",
+      []
+    ],
+    [
+      "keypad:R2",
+      "esp:D15",
+      "blue",
+      []
+    ],
+    [
+      "keypad:R3",
+      "esp:D16",
+      "blue",
+      []
+    ],
+    [
+      "keypad:R4",
+      "esp:D17",
+      "blue",
+      []
+    ],
+    [
+      "keypad:C1",
+      "esp:D34",
+      "green",
+      []
+    ],
+    [
+      "keypad:C2",
+      "esp:D35",
+      "green",
+      []
+    ],
+    [
+      "keypad:C3",
+      "esp:D36",
+      "green",
+      []
+    ],
+    [
+      "keypad:C4",
+      "esp:D39",
+      "green",
+      []
+    ],
+    [
+      "kp_pull1:1",
+      "esp:D34",
+      "green",
+      []
+    ],
+    [
+      "kp_pull1:2",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "kp_pull2:1",
+      "esp:D35",
+      "green",
+      []
+    ],
+    [
+      "kp_pull2:2",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "kp_pull3:1",
+      "esp:D36",
+      "green",
+      []
+    ],
+    [
+      "kp_pull3:2",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "kp_pull4:1",
+      "esp:D39",
+      "green",
+      []
+    ],
+    [
+      "kp_pull4:2",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "sd_cs_pull:1",
+      "esp:D0",
+      "purple",
+      []
+    ],
+    [
+      "sd_cs_pull:2",
+      "esp:3V3",
+      "red",
+      []
+    ]
   ]
 }

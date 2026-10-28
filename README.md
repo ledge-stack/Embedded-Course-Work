@@ -13,12 +13,13 @@ ESP32 based coursework project for a pilot covering the CoCIS main entrance and 
 ## Current status
 
 Leon implemented the entrance RFID readers, occupancy and anti-passback
-decisions, Kampala access schedule, shared interfaces, and one-board Wokwi
-diagram in this change. `src/main.c` starts Leon's entrance runtime alongside
+decisions, Kampala access schedule, entrance LCD, keypad schedule controls,
+authenticated Wi-Fi dashboard, shared interfaces, and one-board Wokwi diagram
+in this change. `src/main.c` starts Leon's entrance runtime alongside
 Trevor's existing room runtime. Trevor's room-control, communications,
 synchronization, and storage-queue code remains his contribution under
-`components/trevor/`; it is not claimed as Leon's work. Edward's SD persistence,
-user management, and authenticated CLI remain outstanding. See
+`components/trevor/`; it is not claimed as Leon's work. Edward's SD event
+persistence, user management, and serial CLI remain outstanding. See
 [`docs/LEON_WORK.md`](docs/LEON_WORK.md) for the contribution boundary and
 [`docs/INTERFACES.md`](docs/INTERFACES.md) for contracts and pin assignments.
 
@@ -33,9 +34,11 @@ pio run -e esp32dev
 The demo joins `Wokwi-GUEST` and uses SNTP for the Kampala access schedule. Entry
 fails closed if time is unavailable; an authorized person who is inside can
 still exit. The demo RFID allowlist contains UID `DE:AD:BE:EF` and `11:22:33:44`.
-Schedule changes are available through `entrance_runtime_set_schedule` for the
-authenticated admin CLI integration; values are RAM-only until Edward's
-configuration storage is connected.
+The LCD shows entrance status, schedule, last event, and occupancy. Admins can
+change hours from the keypad (press `A`, enter demo PIN `2468`, then `#`) or the
+Wi-Fi dashboard; schedule changes persist in NVS. The PIN and HTTP dashboard
+are presentation-only. Wokwi browser access to the ESP32 web server requires
+its Private IoT Gateway; with it enabled, open `http://localhost:9080/`.
 
 Open the project in Wokwi after building. [`wokwi.toml`](wokwi.toml) loads the
 `esp32dev` firmware from `.pio/build/esp32dev/`. The local circuit and signal
@@ -62,9 +65,9 @@ Work from GitHub issues. Use one feature branch per issue, open a pull request t
 ## Project layout
 
 The ESP-IDF build exposes `main`, `entrance`, `rooms`, `comms`,
-`storage`, `cli`, `auth` and `common` component boundaries. Entrance
-and common are implemented under `components/` with public headers under
-`include/`. Trevor's room, transport and storage-queue implementation remains
-in `components/trevor/`; the rooms/comms/storage targets expose integration
-boundaries over his pre-existing implementation. The CLI and auth targets are
-scaffolds for Edward's assigned work, not completed features.
+`storage`, `cli`, `auth` and `common` component boundaries. Entrance,
+demo authentication and common are implemented under `components/` with public
+headers under `include/`. Trevor's room, transport and storage-queue
+implementation remains in `components/trevor/`; the rooms/comms/storage targets
+expose integration boundaries over his pre-existing implementation. The serial
+CLI remains an integration task for Edward.

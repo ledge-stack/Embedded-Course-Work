@@ -28,14 +28,16 @@ All members should review it before extending the message protocol.
   room frame is documented in docs/TREVOR_GUIDE.md; it is not reused as an
   access-event wire message. Remote occupancy/schedule replication still needs
   a team-approved protocol extension.
-- Edward owns user/config persistence and authenticated command handling.
-  Entrance currently uses two clearly labelled demo users until his user source
-  is integrated; no password or admin credential is compiled into this module.
+- Leon's entrance keypad and Wi-Fi dashboard share the demo PIN verifier in
+  components/auth. Both mutate the same entrance schedule API; it commits hours
+  to NVS. The demo PIN is `2468` and is not production authentication.
+- Edward's registered-user management, SD event persistence and serial command
+  handling remain integration work. Entrance currently uses two demo users.
 
 The ESP-IDF component targets are main, entrance, rooms, comms, storage, cli,
-auth and common. Rooms, comms and storage currently expose integration
-boundaries over Trevor's existing component; cli and auth are scaffolds for
-Edward's assigned implementation.
+auth and common. Rooms, comms and storage expose integration boundaries over
+Trevor's existing component; auth supplies the presentation PIN verifier and
+the serial CLI remains an integration task for Edward.
 
 system_access_schedule uses local minutes after midnight in
 Africa/Kampala (UTC+03:00). A start before end defines [start,end). A start
@@ -50,18 +52,21 @@ unknown cards and exit-without-entry remain denied.
 | Room 1 PIR / light | 27 / 26 |
 | Room 2 PIR / light | 33 / 25 |
 | Link up/down switch | 32 |
-| Shared MFRC522 SCK / MOSI / MISO | 21 / 22 / 23 |
+| Shared MFRC522 SCK / MOSI / MISO | 18 / 23 / 19 |
 | Entry MFRC522 SDA/SS / shared RST | 5 / 4 |
 | Exit MFRC522 SDA/SS / shared RST | 13 / 4 |
-| Entry and exit grant indicators | 14 / 15 |
-| Entry and exit deny indicators | 16 / 17 |
-| microSD SPI chip-select (shared SPI bus) | 18 |
+| LCD2004 SDA / SCL (I2C address 0x27) | 21 / 22 |
+| Keypad rows R1-R4 | 14 / 15 / 16 / 17 |
+| Keypad columns C1-C4 | 34 / 35 / 36 / 39 |
+| Keypad column pull-ups | 10 kOhm to 3.3 V, one per column |
+| microSD SPI chip-select (shared SPI bus) | 0 (10 kOhm pull-up to 3.3 V) |
 | UART0 | USB serial console, 115200 baud |
 
 Each MFRC522 operates at 3.3 V. The two readers share SPI and reset, with
-separate chip-selects. GPIO 14-17 drive grant/deny indicator LEDs in Wokwi, not
-door actuators. A physical door needs a rated driver and an independently
-reviewed fail-safe design.
+separate chip-selects. The LCD is a 20x4 I2C module. The 4x4 keypad scans four
+output rows and four input columns; GPIO 34, 35, 36 and 39 need external pull-up
+resistors because they do not provide internal pulls. The room LEDs represent
+room lighting only. No physical door actuator is connected in this simulation.
 
 The Wokwi microSD card shares SCK/MOSI/MISO and has a separate CS. The diagram
 includes the card hardware, but Edward's storage component has not yet mounted
@@ -73,8 +78,9 @@ The demo joins the open Wokwi-GUEST network and synchronizes with SNTP. The
 timezone conversion is EAT-3 (Kampala, UTC+03:00, no daylight-saving change).
 If network/time synchronization fails, entry is denied and reported as a clock
 fault. Exit for an authorized person already inside remains available. At the
-closing boundary the serial log lists any people still inside. The current
-schedule is RAM-only, defaults to 08:00-18:00, and resets at reboot;
-Edward's authenticated persistent configuration path is a required integration
-step. No Wokwi project URL is claimed until the circuit is published and opened
-successfully in the shared simulator.
+closing boundary the serial log lists any people still inside. The schedule
+defaults to 08:00-18:00 and keypad/dashboard changes persist in NVS. The Wi-Fi
+dashboard listens on HTTP port 80 and requires Wokwi's Private IoT Gateway for
+browser access from outside the simulated ESP32. This dashboard and PIN are
+presentation features, not production security. No Wokwi project URL is claimed
+until the circuit is published and opened successfully in the shared simulator.

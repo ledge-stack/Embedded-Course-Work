@@ -7,16 +7,20 @@ room-control contribution.
 
 - Added the entrance access module in components/entrance and its public
   interfaces in include/entrance. It reads the entry and exit MFRC522 readers,
-  checks the demo allowlist, controls grant/deny LEDs, and records timestamped
-  access outcomes.
+  checks the demo allowlist, and records timestamped access outcomes. The LCD
+  reports open/closed state, access hours, last person/action/time, and current
+  occupancy.
 - Added building occupancy and anti-passback behavior. Re-entry while inside
   and exit without an active entry are denied. The event API rejects duplicate
   and older sequence IDs.
 - Added the Kampala access-window rules and SNTP time setup. Entry fails closed
   when time is unavailable or the schedule is closed. A person already inside
-  can exit after closing. The schedule API is RAM-only until the authenticated
-  CLI and configuration storage are integrated.
-- Added the one-ESP32 Wokwi diagram, RFID/door indicator pin plan, and
+  can exit after closing. Schedule changes from the authenticated keypad or
+  Wi-Fi dashboard are saved in ESP32 NVS.
+- Added a keypad PIN flow for changing opening and closing times, plus an
+  authenticated Wi-Fi dashboard for viewing live entrance status and changing
+  the same schedule. The presentation-only demo PIN is `2468`.
+- Added the one-ESP32 Wokwi diagram, RFID/LCD/keypad pin plan, and
   presentation steps. The diagram includes the two-room demo hardware and
   microSD card, but SD mounting and writes are not implemented here.
 - Added shared user, access-event, schedule, and terminal-message definitions
@@ -36,8 +40,9 @@ runtime alongside Leon's entrance runtime.
 
 ## Not claimed as completed here
 
-Edward's SD-card persistence, registered-user/configuration storage, serial
-command handlers, and authenticated admin flow remain integration work. The
-shared Wokwi project has not been published or run in the simulator, so this
-change provides a local diagram but no public simulation URL or runtime
-evidence.
+Edward's SD-card event persistence, registered-user management, and serial
+command handlers remain integration work. This contribution's PIN and Wi-Fi
+dashboard are demo-only and do not replace production authentication. Wokwi's
+HTTP server access from a browser requires the Private IoT Gateway. The shared
+Wokwi project has not been published or run in the simulator, so this change
+provides a local diagram but no public simulation URL or runtime evidence.

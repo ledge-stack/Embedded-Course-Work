@@ -6,9 +6,9 @@
 #include "freertos/task.h"
 #include <string.h>
 
-#define PIN_SCK 21
-#define PIN_MOSI 22
-#define PIN_MISO 23
+#define PIN_SCK 18
+#define PIN_MOSI 23
+#define PIN_MISO 19
 #define PIN_RST 4
 #define PIN_ENTRY_CS 5
 #define PIN_EXIT_CS 13
