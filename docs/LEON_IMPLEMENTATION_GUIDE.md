@@ -57,6 +57,28 @@ Trevor's code stays in `components/trevor/`. Leon should not rename, reformat,
 or make feature edits to those files as part of entrance work. Use the published
 `tr_runtime_*` APIs where integration is needed.
 
+## Where Edward fits
+
+Edward owns the persistent data and serial administration work. The simple
+handoff is: Leon's entrance module owns access decisions and offers APIs;
+Trevor's storage queue is the one writer; Edward supplies the storage and
+command interfaces that use those APIs.
+
+| Edward's assignment | Where it fits | Keep this boundary |
+| --- | --- | --- |
+| Save access, room and lighting events to SD | Implement the storage hook in `components/storage/`; Trevor's storage task calls `tr_storage_append()`. | Do not write to the SD card from RFID, room, keypad, dashboard or CLI tasks. Keep one SD writer and report missing/full-card errors through the existing counters. |
+| Manage registered users | Replace the two fixed demo users with a persistent user source, working with Leon on the entrance public API. | The entrance runtime remains the only owner of the live inside list. CLI code must use an API to update users; it must not edit entrance runtime state directly. |
+| Add serial status and record commands | Implement the command layer in `components/cli/`. Read entrance and room status through their public APIs. | Use the existing USB serial console (UART0); do not install a second UART0 driver. Trevor uses UART1/2 only in separate physical-role builds. |
+| Require admin login for serial changes | Extend or replace the presentation verifier through the shared `components/auth/` API. The keypad and Wi-Fi page already call this verifier. | There must be one admin credential and lockout policy for all three interfaces. Do not add a second PIN check in the CLI. |
+| Persist schedule and other settings | The schedule API currently saves hours to NVS namespace `access_cfg`. Coordinate with Leon before moving persistence to SD. | Keep one authoritative schedule and one write API. Do not add a second schedule copy to the CLI, SD layer, keypad or dashboard. |
+| Choose an innovation feature | Agree it with the team and record it before claiming it in the report. | Existing anti-passback is implemented by Leon, but the team has not recorded it as the approved innovation. |
+
+Leon added the current PIN verifier only to make the presentation keypad and
+dashboard work. Treat it as demo authentication, not Edward's finished
+production admin system. If Edward changes authentication, he should preserve
+one shared interface so keypad, Wi-Fi and serial login behave the same way.
+Keep the authorship of each module explicit in commits and the report.
+
 ## What Leon is responsible for
 
 The coursework plan assigns Leon the shared system interfaces, the combined
