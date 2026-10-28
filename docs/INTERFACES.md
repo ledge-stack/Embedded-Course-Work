@@ -13,8 +13,8 @@ All members should review it before extending the message protocol.
 - Leon's entrance coordinator is the sole writer of inside[], building count,
   door decisions and the access schedule. The current snapshot API is
   entrance_runtime_snapshot; schedule mutation is
-  entrance_runtime_set_schedule and must only be called after Edward's admin
-  authentication succeeds.
+  entrance_runtime_set_schedule. Only the authenticated entrance keypad or
+  Wi-Fi dashboard should expose schedule changes to an administrator.
 - Access state updates use nonzero 32-bit sequence IDs. entrance_apply_event
   applies only newer IDs and returns SYSTEM_ACCESS_STALE_EVENT for duplicate or
   out-of-order deliveries. The serial RFID task is the only event producer in
@@ -61,6 +61,12 @@ unknown cards and exit-without-entry remain denied.
 | Keypad column pull-ups | 10 kOhm to 3.3 V, one per column |
 | microSD SPI chip-select (shared SPI bus) | 0 (10 kOhm pull-up to 3.3 V) |
 | UART0 | USB serial console, 115200 baud |
+
+Build the combined one-chip Wokwi demo only with `pio run -e esp32dev`
+(`TR_ROLE=0`). This starts Trevor's logical rooms and Leon's entrance module
+together. The `coordinator`, `room1`, and `room2` environments are Trevor's
+separate physical-role builds; `main.c` does not start the entrance module in
+those modes because the UART pins overlap the entrance RFID/keypad assignments.
 
 Each MFRC522 operates at 3.3 V. The two readers share SPI and reset, with
 separate chip-selects. The LCD is a 20x4 I2C module. The 4x4 keypad scans four

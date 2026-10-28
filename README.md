@@ -31,7 +31,10 @@ This project uses PlatformIO's `esp32dev` environment with the ESP-IDF framework
 pio run -e esp32dev
 ```
 
-The demo joins `Wokwi-GUEST` and uses SNTP for the Kampala access schedule. Entry
+The combined one-ESP32 presentation build is `pio run -e esp32dev` (`TR_ROLE=0`);
+Trevor's `coordinator`, `room1`, and `room2` environments are separate physical
+roles and do not start Leon's entrance pins. The demo joins `Wokwi-GUEST` and
+uses SNTP for the Kampala access schedule. Entry
 fails closed if time is unavailable; an authorized person who is inside can
 still exit. The demo RFID allowlist contains UID `DE:AD:BE:EF` and `11:22:33:44`.
 The LCD shows entrance status, schedule, last event, and occupancy. Admins can

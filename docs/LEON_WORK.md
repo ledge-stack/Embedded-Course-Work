@@ -35,8 +35,10 @@ in include/trevor. It provides the room motion/off-delay logic, room
 state protocol, logical link queues, UART roles, synchronization, and the
 serialized storage hook. Those implementation files were moved from src/trevor
 to components/trevor so ESP-IDF can build them as a component; their behavior
-and authorship remain Trevor's. Leon's src/main.c change only starts Trevor's
-runtime alongside Leon's entrance runtime.
+and authorship remain Trevor's. Leon's src/main.c integration starts both
+runtimes together in the single-chip `TR_ROLE=0` presentation build. In
+Trevor's optional physical-role builds it starts only Trevor's runtime, because
+those UART roles reuse GPIOs assigned to Leon's entrance hardware.
 
 ## Not claimed as completed here
 
