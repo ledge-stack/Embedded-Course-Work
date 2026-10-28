@@ -21,7 +21,10 @@ synchronization, and storage-queue code remains his contribution under
 `components/trevor/`; it is not claimed as Leon's work. Edward's SD event
 persistence, user management, and serial CLI remain outstanding. See
 [`docs/LEON_WORK.md`](docs/LEON_WORK.md) for the contribution boundary and
-[`docs/INTERFACES.md`](docs/INTERFACES.md) for contracts and pin assignments.
+[`docs/LEON_IMPLEMENTATION_GUIDE.md`](docs/LEON_IMPLEMENTATION_GUIDE.md) for
+Leon and Edward's module boundaries. The current and proposed pin assignments
+are in [`docs/INTERFACES.md`](docs/INTERFACES.md) and
+[`docs/LEON_ENTRANCE_SAFETY_DESIGN.md`](docs/LEON_ENTRANCE_SAFETY_DESIGN.md).
 
 ## Build and simulation
 

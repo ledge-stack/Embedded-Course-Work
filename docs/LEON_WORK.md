@@ -42,6 +42,12 @@ those UART roles reuse GPIOs assigned to Leon's entrance hardware.
 
 ## Not claimed as completed here
 
+The denied-access buzzer, tailgate alerts, and evacuation report are planned,
+not implemented. Anti-passback denial already exists, but a reader alone
+cannot detect an extra person passing behind a cardholder. See
+[`LEON_ENTRANCE_SAFETY_DESIGN.md`](LEON_ENTRANCE_SAFETY_DESIGN.md) for the
+simulation-only trigger and the sensor needed for real tailgate detection.
+
 Edward's SD-card event persistence, registered-user management, and serial
 command handlers remain integration work. This contribution's PIN and Wi-Fi
 dashboard are demo-only and do not replace production authentication. Wokwi's

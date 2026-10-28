@@ -17,6 +17,8 @@ presentation build without owning the same pins or state.
   UART pins overlap some entrance pins.
 - Keep the code simple: each module has one job, entrance state has one owner,
   and other modules use the entrance API instead of editing that state.
+- Leon's planned anti-passback/tailgating alerts and evacuation report are
+  specified separately in [`LEON_ENTRANCE_SAFETY_DESIGN.md`](LEON_ENTRANCE_SAFETY_DESIGN.md).
 
 ## How the modules fit together
 
@@ -124,6 +126,9 @@ and #18 in `docs/IMPLEMENTATION_PLAN.md`). Keep each item demonstrable:
   run the Wokwi project, and complete the report/video/submission steps. The
   anti-passback behavior exists, but do not label it the team's approved
   innovation until the team records that decision.
+- The denied-access buzzer, tailgate alert input, and evacuation report are
+  planned only. Follow `LEON_ENTRANCE_SAFETY_DESIGN.md`; do not present them as
+  implemented until the code, diagram, build, and Wokwi scenario are complete.
 
 ## One-chip rules that prevent interference
 

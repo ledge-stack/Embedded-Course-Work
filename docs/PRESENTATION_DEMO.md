@@ -30,6 +30,11 @@ current occupancy.
    denial. A known person already inside can exit after closing. At close,
    serial logs list any remaining occupants.
 
+Anti-passback denial is part of the current demo. The denied-access buzzer,
+tailgating alert input, and keypad evacuation report are planned, not yet
+implemented. Their design and limits are in
+[`LEON_ENTRANCE_SAFETY_DESIGN.md`](LEON_ENTRANCE_SAFETY_DESIGN.md).
+
 ## Change the schedule at the terminal
 
 1. Press `A`, enter demo PIN `2468`, then press `#`.
