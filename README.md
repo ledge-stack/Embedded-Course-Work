@@ -12,13 +12,15 @@ ESP32 based coursework project for a pilot covering the CoCIS main entrance and 
 
 ## Current status
 
-Trevor's room-control, communication and synchronization modules are integrated
-with Leon's entrance RFID, anti-passback occupancy tracking and schedule
-decisions. The shared build runs both modules from `src/main.c`. The local
-Wokwi diagram combines two rooms and two RFID readers on one ESP32; it does not
-simulate three physical boards. Edward's SD persistence, user management and
-authenticated CLI integration remain outstanding. See [`docs/INTERFACES.md`](docs/INTERFACES.md)
-for contracts and pin assignments.
+Leon implemented the entrance RFID readers, occupancy and anti-passback
+decisions, Kampala access schedule, shared interfaces, and one-board Wokwi
+diagram in this change. `src/main.c` starts Leon's entrance runtime alongside
+Trevor's existing room runtime. Trevor's room-control, communications,
+synchronization, and storage-queue code remains his contribution under
+`components/trevor/`; it is not claimed as Leon's work. Edward's SD persistence,
+user management, and authenticated CLI remain outstanding. See
+[`docs/LEON_WORK.md`](docs/LEON_WORK.md) for the contribution boundary and
+[`docs/INTERFACES.md`](docs/INTERFACES.md) for contracts and pin assignments.
 
 ## Build and simulation
 
@@ -64,5 +66,5 @@ The ESP-IDF build exposes `main`, `entrance`, `rooms`, `comms`,
 and common are implemented under `components/` with public headers under
 `include/`. Trevor's room, transport and storage-queue implementation remains
 in `components/trevor/`; the rooms/comms/storage targets expose integration
-boundaries over that implementation. The CLI and auth targets are scaffolds for
-Edward's assigned work, not completed features.
+boundaries over his pre-existing implementation. The CLI and auth targets are
+scaffolds for Edward's assigned work, not completed features.

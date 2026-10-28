@@ -29,8 +29,9 @@ Wokwi-GUEST and synchronizes time with SNTP; wait for the
    denial. Exits for a known person already inside remain allowed after closing.
    When the access window closes, serial logs list any remaining occupants.
 
-## Demonstrate room control and link state
+## Trevor's existing room demo
 
+This is Trevor's pre-existing subsystem, included in the combined firmware.
 Trigger each PIR sensor and observe its matching room LED. Motion turns the
 light on immediately; after motion ends, the light stays on for the configured
 five-second off-delay. Move the link switch left to interrupt Trevor's logical
@@ -41,6 +42,8 @@ room/coordinator queues, then right to restore them.
 This diagram intentionally contains one ESP32. Room 1, Room 2, entrance and
 exit run as logical modules on the same chip. The two RFID readers share SPI
 with separate chip-selects; the microSD hardware is present on the same bus.
+The entrance, occupancy, schedule, shared-type, and diagram work in this change
+is Leon's. The room-control and logical-link behavior remains Trevor's.
 The current firmware does not mount or write the microSD card. The schedule
 setter is an API for Edward's future authenticated CLI integration; there is
 no serial admin command yet. The registered UIDs and schedule are demo values,
