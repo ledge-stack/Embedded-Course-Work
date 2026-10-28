@@ -1,0 +1,204 @@
+{
+  "version": 1,
+  "author": "Kato Trevor coursework",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-esp32-devkit-v1",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-pir-motion-sensor",
+      "id": "pir1",
+      "top": -100,
+      "left": -230,
+      "attrs": {
+        "delayTime": "1",
+        "inhibitTime": "0.1"
+      }
+    },
+    {
+      "type": "wokwi-pir-motion-sensor",
+      "id": "pir2",
+      "top": -100,
+      "left": 240,
+      "attrs": {
+        "delayTime": "1",
+        "inhibitTime": "0.1"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "light1",
+      "top": 50,
+      "left": -175,
+      "attrs": {
+        "color": "yellow",
+        "label": "Room 1 light"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "light2",
+      "top": 50,
+      "left": 270,
+      "attrs": {
+        "color": "green",
+        "label": "Room 2 light"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 110,
+      "left": -170,
+      "attrs": {
+        "value": "330"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r2",
+      "top": 110,
+      "left": 265,
+      "attrs": {
+        "value": "330"
+      }
+    },
+    {
+      "type": "wokwi-slide-switch",
+      "id": "link",
+      "top": 230,
+      "left": 20,
+      "attrs": {
+        "value": "1",
+        "bounce": "0"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "title",
+      "top": -180,
+      "left": -170,
+      "attrs": {
+        "text": "Trevor: 3 logical terminals on ONE ESP32"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "hint",
+      "top": 285,
+      "left": -140,
+      "attrs": {
+        "text": "Link: RIGHT = connected; LEFT = outage"
+      }
+    }
+  ],
+  "connections": [
+    [
+      "esp:TX0",
+      "$serialMonitor:RX",
+      "",
+      []
+    ],
+    [
+      "esp:RX0",
+      "$serialMonitor:TX",
+      "",
+      []
+    ],
+    [
+      "pir1:VCC",
+      "esp:VIN",
+      "red",
+      []
+    ],
+    [
+      "pir1:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "pir1:OUT",
+      "esp:D27",
+      "green",
+      []
+    ],
+    [
+      "pir2:VCC",
+      "esp:VIN",
+      "red",
+      []
+    ],
+    [
+      "pir2:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "pir2:OUT",
+      "esp:D33",
+      "green",
+      []
+    ],
+    [
+      "esp:D26",
+      "light1:A",
+      "orange",
+      []
+    ],
+    [
+      "light1:C",
+      "r1:1",
+      "black",
+      []
+    ],
+    [
+      "r1:2",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "esp:D25",
+      "light2:A",
+      "orange",
+      []
+    ],
+    [
+      "light2:C",
+      "r2:1",
+      "black",
+      []
+    ],
+    [
+      "r2:2",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "link:2",
+      "esp:D32",
+      "blue",
+      []
+    ],
+    [
+      "link:1",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "link:3",
+      "esp:3V3",
+      "red",
+      []
+    ]
+  ]
+}
