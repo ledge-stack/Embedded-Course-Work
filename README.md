@@ -12,19 +12,35 @@ ESP32 based coursework project for a pilot covering the CoCIS main entrance and 
 
 ## Current status
 
-Trevor's room-control, communication and synchronization modules are implemented, with portable C tests and a threaded adapter test. The default build demonstrates three logical terminals on one ESP32 with two PIR sensors, two LEDs and an outage switch. Separate coordinator/room firmware roles use UART for physical deployment. See [`docs/TREVOR_GUIDE.md`](docs/TREVOR_GUIDE.md) for pins, protocol, integration APIs, limitations and demonstration steps. Entrance access, SD persistence and authenticated management remain team integration work. The original backlog is in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md).
+Trevor's room-control, communication and synchronization modules are integrated
+with Leon's entrance RFID, anti-passback occupancy tracking and schedule
+decisions. The shared build runs both modules from `src/main.c`. The local
+Wokwi diagram combines two rooms and two RFID readers on one ESP32; it does not
+simulate three physical boards. Edward's SD persistence, user management and
+authenticated CLI integration remain outstanding. See [`docs/INTERFACES.md`](docs/INTERFACES.md)
+for contracts and pin assignments.
 
 ## Build and simulation
 
 This project uses PlatformIO's `esp32dev` environment with the ESP-IDF framework.
 
 ```sh
-pio run
+pio run -e esp32dev
 ```
 
-Open the project in Wokwi using the supplied `diagram.json`. [`wokwi.toml`](wokwi.toml) points to the PlatformIO demo outputs under `.pio/build/esp32dev/`. Build successfully before starting the simulation. Wokwi does not support multiple wired microcontrollers in one simulation, so this circuit deliberately demonstrates logical terminals on one board; physical UART communication requires separate ESP32 boards.
+The demo joins `Wokwi-GUEST` and uses SNTP for the Kampala access schedule. Entry
+fails closed if time is unavailable; an authorized person who is inside can
+still exit. The demo RFID allowlist contains UID `DE:AD:BE:EF` and `11:22:33:44`.
+Schedule changes are available through `entrance_runtime_set_schedule` for the
+authenticated admin CLI integration; values are RAM-only until Edward's
+configuration storage is connected.
 
-The Wokwi project link will be added here when the shared simulation is created.
+Open the project in Wokwi after building. [`wokwi.toml`](wokwi.toml) loads the
+`esp32dev` firmware from `.pio/build/esp32dev/`. The local circuit and signal
+assignments are in [`diagram.json`](diagram.json) and
+[`docs/INTERFACES.md`](docs/INTERFACES.md). Publishing and validating a shared
+Wokwi project link remains a team action. The presentation sequence is in
+[`docs/PRESENTATION_DEMO.md`](docs/PRESENTATION_DEMO.md).
 
 ## Requirements at a glance
 
@@ -43,4 +59,10 @@ Work from GitHub issues. Use one feature branch per issue, open a pull request t
 
 ## Project layout
 
-The planned team module boundaries are `entrance`, `rooms`, `comms`, `storage`, `cli`, `auth` and `common`. Trevor's portable room/protocol logic is in `src/trevor/core.c`; its ESP-IDF adapter is in `src/trevor/runtime.c`, with public headers under `include/trevor/`. Other members can integrate through these headers without depending on task internals.
+The ESP-IDF build exposes `main`, `entrance`, `rooms`, `comms`,
+`storage`, `cli`, `auth` and `common` component boundaries. Entrance
+and common are implemented under `components/` with public headers under
+`include/`. Trevor's room, transport and storage-queue implementation remains
+in `components/trevor/`; the rooms/comms/storage targets expose integration
+boundaries over that implementation. The CLI and auth targets are scaffolds for
+Edward's assigned work, not completed features.

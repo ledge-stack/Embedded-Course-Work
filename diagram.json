@@ -1,204 +1,212 @@
 {
   "version": 1,
-  "author": "Kato Trevor coursework",
+  "author": "Leon Nsitta coursework",
   "editor": "wokwi",
   "parts": [
     {
       "type": "wokwi-esp32-devkit-v1",
       "id": "esp",
-      "top": 0,
-      "left": 0,
+      "top": 110,
+      "left": 30,
       "attrs": {}
     },
     {
       "type": "wokwi-pir-motion-sensor",
       "id": "pir1",
       "top": -100,
-      "left": -230,
-      "attrs": {
-        "delayTime": "1",
-        "inhibitTime": "0.1"
-      }
+      "left": -220,
+      "attrs": { "delayTime": "1", "inhibitTime": "0.1" }
     },
     {
       "type": "wokwi-pir-motion-sensor",
       "id": "pir2",
       "top": -100,
-      "left": 240,
-      "attrs": {
-        "delayTime": "1",
-        "inhibitTime": "0.1"
-      }
+      "left": 250,
+      "attrs": { "delayTime": "1", "inhibitTime": "0.1" }
     },
     {
       "type": "wokwi-led",
       "id": "light1",
-      "top": 50,
-      "left": -175,
-      "attrs": {
-        "color": "yellow",
-        "label": "Room 1 light"
-      }
+      "top": 30,
+      "left": -160,
+      "attrs": { "color": "yellow", "label": "Room 1 light" }
     },
     {
       "type": "wokwi-led",
       "id": "light2",
-      "top": 50,
-      "left": 270,
-      "attrs": {
-        "color": "green",
-        "label": "Room 2 light"
-      }
+      "top": 30,
+      "left": 280,
+      "attrs": { "color": "green", "label": "Room 2 light" }
     },
     {
       "type": "wokwi-resistor",
       "id": "r1",
-      "top": 110,
-      "left": -170,
-      "attrs": {
-        "value": "330"
-      }
+      "top": 85,
+      "left": -155,
+      "attrs": { "value": "330" }
     },
     {
       "type": "wokwi-resistor",
       "id": "r2",
-      "top": 110,
-      "left": 265,
-      "attrs": {
-        "value": "330"
-      }
+      "top": 85,
+      "left": 275,
+      "attrs": { "value": "330" }
     },
     {
       "type": "wokwi-slide-switch",
       "id": "link",
-      "top": 230,
-      "left": 20,
-      "attrs": {
-        "value": "1",
-        "bounce": "0"
-      }
+      "top": 360,
+      "left": 25,
+      "attrs": { "value": "1", "bounce": "0" }
+    },
+    {
+      "type": "board-mfrc522",
+      "id": "entry_rfid",
+      "top": -250,
+      "left": -350,
+      "attrs": { "uid": "DE:AD:BE:EF" }
+    },
+    {
+      "type": "board-mfrc522",
+      "id": "exit_rfid",
+      "top": -250,
+      "left": 330,
+      "attrs": { "uid": "DE:AD:BE:EF" }
+    },
+    {
+      "type": "wokwi-microsd-card",
+      "id": "sdcard",
+      "top": 120,
+      "left": 470,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-led",
+      "id": "entry_led",
+      "top": 325,
+      "left": -165,
+      "attrs": { "color": "blue", "label": "Entry granted" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "exit_led",
+      "top": 325,
+      "left": 285,
+      "attrs": { "color": "green", "label": "Exit granted" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "entry_denied",
+      "top": 325,
+      "left": -60,
+      "attrs": { "color": "red", "label": "Entry denied" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "exit_denied",
+      "top": 325,
+      "left": 390,
+      "attrs": { "color": "red", "label": "Exit denied" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "entry_r",
+      "top": 390,
+      "left": -160,
+      "attrs": { "value": "330" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "exit_r",
+      "top": 390,
+      "left": 280,
+      "attrs": { "value": "330" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "entry_denied_r",
+      "top": 390,
+      "left": -55,
+      "attrs": { "value": "330" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "exit_denied_r",
+      "top": 390,
+      "left": 385,
+      "attrs": { "value": "330" }
     },
     {
       "type": "wokwi-text",
       "id": "title",
-      "top": -180,
-      "left": -170,
-      "attrs": {
-        "text": "Trevor: 3 logical terminals on ONE ESP32"
-      }
+      "top": -315,
+      "left": -180,
+      "attrs": { "text": "ONE ESP32: entrance + two rooms (logical terminals)" }
     },
     {
       "type": "wokwi-text",
       "id": "hint",
-      "top": 285,
-      "left": -140,
-      "attrs": {
-        "text": "Link: RIGHT = connected; LEFT = outage"
-      }
+      "top": 445,
+      "left": -300,
+      "attrs": { "text": "RFID blue=DE:AD:BE:EF, green=11:22:33:44 | tap reader to present card" }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "net_hint",
+      "top": 475,
+      "left": -300,
+      "attrs": { "text": "SNTP uses Wokwi-GUEST; serial monitor 115200 baud" }
     }
   ],
   "connections": [
-    [
-      "esp:TX0",
-      "$serialMonitor:RX",
-      "",
-      []
-    ],
-    [
-      "esp:RX0",
-      "$serialMonitor:TX",
-      "",
-      []
-    ],
-    [
-      "pir1:VCC",
-      "esp:VIN",
-      "red",
-      []
-    ],
-    [
-      "pir1:GND",
-      "esp:GND.1",
-      "black",
-      []
-    ],
-    [
-      "pir1:OUT",
-      "esp:D27",
-      "green",
-      []
-    ],
-    [
-      "pir2:VCC",
-      "esp:VIN",
-      "red",
-      []
-    ],
-    [
-      "pir2:GND",
-      "esp:GND.1",
-      "black",
-      []
-    ],
-    [
-      "pir2:OUT",
-      "esp:D33",
-      "green",
-      []
-    ],
-    [
-      "esp:D26",
-      "light1:A",
-      "orange",
-      []
-    ],
-    [
-      "light1:C",
-      "r1:1",
-      "black",
-      []
-    ],
-    [
-      "r1:2",
-      "esp:GND.1",
-      "black",
-      []
-    ],
-    [
-      "esp:D25",
-      "light2:A",
-      "orange",
-      []
-    ],
-    [
-      "light2:C",
-      "r2:1",
-      "black",
-      []
-    ],
-    [
-      "r2:2",
-      "esp:GND.1",
-      "black",
-      []
-    ],
-    [
-      "link:2",
-      "esp:D32",
-      "blue",
-      []
-    ],
-    [
-      "link:1",
-      "esp:GND.1",
-      "black",
-      []
-    ],
-    [
-      "link:3",
-      "esp:3V3",
-      "red",
-      []
-    ]
+    [ "esp:TX0", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX0", "$serialMonitor:TX", "", [] ],
+    [ "pir1:VCC", "esp:VIN", "red", [] ],
+    [ "pir1:GND", "esp:GND.1", "black", [] ],
+    [ "pir1:OUT", "esp:D27", "green", [] ],
+    [ "pir2:VCC", "esp:VIN", "red", [] ],
+    [ "pir2:GND", "esp:GND.1", "black", [] ],
+    [ "pir2:OUT", "esp:D33", "green", [] ],
+    [ "esp:D26", "light1:A", "orange", [] ],
+    [ "light1:C", "r1:1", "black", [] ],
+    [ "r1:2", "esp:GND.1", "black", [] ],
+    [ "esp:D25", "light2:A", "orange", [] ],
+    [ "light2:C", "r2:1", "black", [] ],
+    [ "r2:2", "esp:GND.1", "black", [] ],
+    [ "link:2", "esp:D32", "blue", [] ],
+    [ "link:1", "esp:GND.1", "black", [] ],
+    [ "link:3", "esp:3V3", "red", [] ],
+    [ "entry_rfid:SCK", "esp:D21", "blue", [] ],
+    [ "exit_rfid:SCK", "esp:D21", "blue", [] ],
+    [ "entry_rfid:MOSI", "esp:D22", "orange", [] ],
+    [ "exit_rfid:MOSI", "esp:D22", "orange", [] ],
+    [ "entry_rfid:MISO", "esp:D23", "green", [] ],
+    [ "exit_rfid:MISO", "esp:D23", "green", [] ],
+    [ "entry_rfid:SDA", "esp:D5", "purple", [] ],
+    [ "exit_rfid:SDA", "esp:D13", "purple", [] ],
+    [ "entry_rfid:RST", "esp:D4", "yellow", [] ],
+    [ "exit_rfid:RST", "esp:D4", "yellow", [] ],
+    [ "entry_rfid:3.3V", "esp:3V3", "red", [] ],
+    [ "exit_rfid:3.3V", "esp:3V3", "red", [] ],
+    [ "entry_rfid:GND", "esp:GND.1", "black", [] ],
+    [ "exit_rfid:GND", "esp:GND.1", "black", [] ],
+    [ "sdcard:VCC", "esp:3V3", "red", [] ],
+    [ "sdcard:GND", "esp:GND.1", "black", [] ],
+    [ "sdcard:SCK", "esp:D21", "blue", [] ],
+    [ "sdcard:DI", "esp:D22", "orange", [] ],
+    [ "sdcard:DO", "esp:D23", "green", [] ],
+    [ "sdcard:CS", "esp:D18", "purple", [] ],
+    [ "esp:D14", "entry_led:A", "blue", [] ],
+    [ "entry_led:C", "entry_r:1", "black", [] ],
+    [ "entry_r:2", "esp:GND.1", "black", [] ],
+    [ "esp:D15", "exit_led:A", "green", [] ],
+    [ "exit_led:C", "exit_r:1", "black", [] ],
+    [ "exit_r:2", "esp:GND.1", "black", [] ],
+    [ "esp:D16", "entry_denied:A", "red", [] ],
+    [ "entry_denied:C", "entry_denied_r:1", "black", [] ],
+    [ "entry_denied_r:2", "esp:GND.1", "black", [] ],
+    [ "esp:D17", "exit_denied:A", "red", [] ],
+    [ "exit_denied:C", "exit_denied_r:1", "black", [] ],
+    [ "exit_denied_r:2", "esp:GND.1", "black", [] ]
   ]
 }
