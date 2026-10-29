@@ -1,20 +1,20 @@
 {
   "version": 1,
-  "author": "Kato Trevor coursework",
+  "author": "Leon Nsitta coursework",
   "editor": "wokwi",
   "parts": [
     {
       "type": "wokwi-esp32-devkit-v1",
       "id": "esp",
-      "top": 0,
-      "left": 0,
+      "top": 110,
+      "left": 30,
       "attrs": {}
     },
     {
       "type": "wokwi-pir-motion-sensor",
       "id": "pir1",
       "top": -100,
-      "left": -230,
+      "left": -220,
       "attrs": {
         "delayTime": "1",
         "inhibitTime": "0.1"
@@ -24,7 +24,7 @@
       "type": "wokwi-pir-motion-sensor",
       "id": "pir2",
       "top": -100,
-      "left": 240,
+      "left": 250,
       "attrs": {
         "delayTime": "1",
         "inhibitTime": "0.1"
@@ -33,8 +33,8 @@
     {
       "type": "wokwi-led",
       "id": "light1",
-      "top": 50,
-      "left": -175,
+      "top": 30,
+      "left": -160,
       "attrs": {
         "color": "yellow",
         "label": "Room 1 light"
@@ -43,8 +43,8 @@
     {
       "type": "wokwi-led",
       "id": "light2",
-      "top": 50,
-      "left": 270,
+      "top": 30,
+      "left": 280,
       "attrs": {
         "color": "green",
         "label": "Room 2 light"
@@ -53,8 +53,8 @@
     {
       "type": "wokwi-resistor",
       "id": "r1",
-      "top": 110,
-      "left": -170,
+      "top": 85,
+      "left": -155,
       "attrs": {
         "value": "330"
       }
@@ -62,8 +62,8 @@
     {
       "type": "wokwi-resistor",
       "id": "r2",
-      "top": 110,
-      "left": 265,
+      "top": 85,
+      "left": 275,
       "attrs": {
         "value": "330"
       }
@@ -71,29 +71,125 @@
     {
       "type": "wokwi-slide-switch",
       "id": "link",
-      "top": 230,
-      "left": 20,
+      "top": 360,
+      "left": 25,
       "attrs": {
         "value": "1",
         "bounce": "0"
       }
     },
     {
+      "type": "board-mfrc522",
+      "id": "entry_rfid",
+      "top": -250,
+      "left": -350,
+      "attrs": {
+        "uid": "DE:AD:BE:EF"
+      }
+    },
+    {
+      "type": "board-mfrc522",
+      "id": "exit_rfid",
+      "top": -250,
+      "left": 330,
+      "attrs": {
+        "uid": "DE:AD:BE:EF"
+      }
+    },
+    {
+      "type": "wokwi-microsd-card",
+      "id": "sdcard",
+      "top": 120,
+      "left": 470,
+      "attrs": {}
+    },
+    {
       "type": "wokwi-text",
       "id": "title",
-      "top": -180,
-      "left": -170,
+      "top": -315,
+      "left": -180,
       "attrs": {
-        "text": "Trevor: 3 logical terminals on ONE ESP32"
+        "text": "ONE ESP32 SIMULATION: entrance terminal + two logical rooms"
       }
     },
     {
       "type": "wokwi-text",
       "id": "hint",
-      "top": 285,
-      "left": -140,
+      "top": 445,
+      "left": -300,
       "attrs": {
-        "text": "Link: RIGHT = connected; LEFT = outage"
+        "text": "Admin keypad: A, PIN 2468, #, then 1/2 to set opening/closing time"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "net_hint",
+      "top": 475,
+      "left": -300,
+      "attrs": {
+        "text": "LCD status + Wi-Fi dashboard; browser access uses Wokwi Private IoT Gateway"
+      }
+    },
+    {
+      "type": "wokwi-lcd2004",
+      "id": "lcd",
+      "top": 500,
+      "left": -400,
+      "attrs": {
+        "pins": "i2c",
+        "i2cAddress": "0x27"
+      }
+    },
+    {
+      "type": "wokwi-membrane-keypad",
+      "id": "keypad",
+      "top": 520,
+      "left": 50,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "kp_pull1",
+      "top": 620,
+      "left": 420,
+      "attrs": {
+        "value": "10k"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "kp_pull2",
+      "top": 620,
+      "left": 465,
+      "attrs": {
+        "value": "10k"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "kp_pull3",
+      "top": 620,
+      "left": 510,
+      "attrs": {
+        "value": "10k"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "kp_pull4",
+      "top": 620,
+      "left": 555,
+      "attrs": {
+        "value": "10k"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "sd_cs_pull",
+      "top": 680,
+      "left": 610,
+      "attrs": {
+        "value": "10k"
       }
     }
   ],
@@ -196,6 +292,174 @@
     ],
     [
       "link:3",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "sdcard:VCC",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "sdcard:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "sdcard:SCK",
+      "esp:D18",
+      "blue",
+      []
+    ],
+    [
+      "sdcard:DI",
+      "esp:D23",
+      "orange",
+      []
+    ],
+    [
+      "sdcard:DO",
+      "esp:D19",
+      "green",
+      []
+    ],
+    [
+      "sdcard:CS",
+      "esp:D0",
+      "purple",
+      []
+    ],
+    [
+      "lcd:VCC",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "lcd:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "lcd:SDA",
+      "esp:D21",
+      "green",
+      []
+    ],
+    [
+      "lcd:SCL",
+      "esp:D22",
+      "blue",
+      []
+    ],
+    [
+      "keypad:R1",
+      "esp:D14",
+      "blue",
+      []
+    ],
+    [
+      "keypad:R2",
+      "esp:D15",
+      "blue",
+      []
+    ],
+    [
+      "keypad:R3",
+      "esp:D16",
+      "blue",
+      []
+    ],
+    [
+      "keypad:R4",
+      "esp:D17",
+      "blue",
+      []
+    ],
+    [
+      "keypad:C1",
+      "esp:D34",
+      "green",
+      []
+    ],
+    [
+      "keypad:C2",
+      "esp:D35",
+      "green",
+      []
+    ],
+    [
+      "keypad:C3",
+      "esp:D36",
+      "green",
+      []
+    ],
+    [
+      "keypad:C4",
+      "esp:D39",
+      "green",
+      []
+    ],
+    [
+      "kp_pull1:1",
+      "esp:D34",
+      "green",
+      []
+    ],
+    [
+      "kp_pull1:2",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "kp_pull2:1",
+      "esp:D35",
+      "green",
+      []
+    ],
+    [
+      "kp_pull2:2",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "kp_pull3:1",
+      "esp:D36",
+      "green",
+      []
+    ],
+    [
+      "kp_pull3:2",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "kp_pull4:1",
+      "esp:D39",
+      "green",
+      []
+    ],
+    [
+      "kp_pull4:2",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "sd_cs_pull:1",
+      "esp:D0",
+      "purple",
+      []
+    ],
+    [
+      "sd_cs_pull:2",
       "esp:3V3",
       "red",
       []

@@ -12,19 +12,46 @@ ESP32 based coursework project for a pilot covering the CoCIS main entrance and 
 
 ## Current status
 
-Trevor's room-control, communication and synchronization modules are implemented, with portable C tests and a threaded adapter test. The default build demonstrates three logical terminals on one ESP32 with two PIR sensors, two LEDs and an outage switch. Separate coordinator/room firmware roles use UART for physical deployment. See [`docs/TREVOR_GUIDE.md`](docs/TREVOR_GUIDE.md) for pins, protocol, integration APIs, limitations and demonstration steps. Entrance access, SD persistence and authenticated management remain team integration work. The original backlog is in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md).
+Leon implemented the entrance RFID readers, occupancy and anti-passback
+decisions, Kampala access schedule, entrance LCD, keypad schedule controls,
+authenticated Wi-Fi dashboard, shared interfaces, and one-board Wokwi diagram
+in this change. `src/main.c` starts Leon's entrance runtime alongside
+Trevor's existing room runtime. Trevor's room-control, communications,
+synchronization, and storage-queue code remains his contribution under
+`components/trevor/`; it is not claimed as Leon's work. Edward's SD event
+persistence, user management, and serial CLI remain outstanding. See
+[`docs/LEON_WORK.md`](docs/LEON_WORK.md) for the contribution boundary and
+[`docs/LEON_IMPLEMENTATION_GUIDE.md`](docs/LEON_IMPLEMENTATION_GUIDE.md) for
+Leon and Edward's module boundaries. The current and proposed pin assignments
+are in [`docs/INTERFACES.md`](docs/INTERFACES.md) and
+[`docs/LEON_ENTRANCE_SAFETY_DESIGN.md`](docs/LEON_ENTRANCE_SAFETY_DESIGN.md).
 
 ## Build and simulation
 
 This project uses PlatformIO's `esp32dev` environment with the ESP-IDF framework.
 
 ```sh
-pio run
+pio run -e esp32dev
 ```
 
-Open the project in Wokwi using the supplied `diagram.json`. [`wokwi.toml`](wokwi.toml) points to the PlatformIO demo outputs under `.pio/build/esp32dev/`. Build successfully before starting the simulation. Wokwi does not support multiple wired microcontrollers in one simulation, so this circuit deliberately demonstrates logical terminals on one board; physical UART communication requires separate ESP32 boards.
+The combined one-ESP32 presentation build is `pio run -e esp32dev` (`TR_ROLE=0`);
+Trevor's `coordinator`, `room1`, and `room2` environments are separate physical
+roles and do not start Leon's entrance pins. The demo joins `Wokwi-GUEST` and
+uses SNTP for the Kampala access schedule. Entry
+fails closed if time is unavailable; an authorized person who is inside can
+still exit. The demo RFID allowlist contains UID `DE:AD:BE:EF` and `11:22:33:44`.
+The LCD shows entrance status, schedule, last event, and occupancy. Admins can
+change hours from the keypad (press `A`, enter demo PIN `2468`, then `#`) or the
+Wi-Fi dashboard; schedule changes persist in NVS. The PIN and HTTP dashboard
+are presentation-only. Wokwi browser access to the ESP32 web server requires
+its Private IoT Gateway; with it enabled, open `http://localhost:9080/`.
 
-The Wokwi project link will be added here when the shared simulation is created.
+Open the project in Wokwi after building. [`wokwi.toml`](wokwi.toml) loads the
+`esp32dev` firmware from `.pio/build/esp32dev/`. The local circuit and signal
+assignments are in [`diagram.json`](diagram.json) and
+[`docs/INTERFACES.md`](docs/INTERFACES.md). Publishing and validating a shared
+Wokwi project link remains a team action. The presentation sequence is in
+[`docs/PRESENTATION_DEMO.md`](docs/PRESENTATION_DEMO.md).
 
 ## Requirements at a glance
 
@@ -43,4 +70,10 @@ Work from GitHub issues. Use one feature branch per issue, open a pull request t
 
 ## Project layout
 
-The planned team module boundaries are `entrance`, `rooms`, `comms`, `storage`, `cli`, `auth` and `common`. Trevor's portable room/protocol logic is in `src/trevor/core.c`; its ESP-IDF adapter is in `src/trevor/runtime.c`, with public headers under `include/trevor/`. Other members can integrate through these headers without depending on task internals.
+The ESP-IDF build exposes `main`, `entrance`, `rooms`, `comms`,
+`storage`, `cli`, `auth` and `common` component boundaries. Entrance,
+demo authentication and common are implemented under `components/` with public
+headers under `include/`. Trevor's room, transport and storage-queue
+implementation remains in `components/trevor/`; the rooms/comms/storage targets
+expose integration boundaries over his pre-existing implementation. The serial
+CLI remains an integration task for Edward.
