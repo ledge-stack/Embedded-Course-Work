@@ -1,10 +1,13 @@
 # Leon's entrance safety feature design
 
-**Status: planned.** The entrance core already rejects repeat entry by a user
-who is recorded inside, and rejects exit by a user who is not recorded inside.
-The new audible alert, tailgating indication, and evacuation report described
-here are not implemented yet. This design is for the one-ESP32 presentation
-simulation and must remain separate from Trevor's room-control code.
+**Status: partly implemented.** The entrance core rejects repeat entry by a user
+who is recorded inside and exit by a user who is not recorded inside. The
+firmware now prints a read-only evacuation roll-call on keypad `C`, prints an
+after-hours report when the schedule closes with people inside, and marks
+occupancy uncertain when keypad `B` injects a simulated tailgate. Grace's
+actuator feedback and buzzer are a separate integration task and are not
+claimed here. This feature is for the one-ESP32 presentation simulation and
+remains separate from Trevor's room-control code.
 
 ## Goals
 
@@ -23,10 +26,10 @@ Add one small entrance alert module:
 
 | Planned module | One responsibility |
 | --- | --- |
-| `components/entrance/alert.c` and `include/entrance/alert.h` | Own the buzzer pin and play short predefined patterns for a denied scan or a suspected tailgate. It does not decide whether a card is valid. |
+| `components/entrance/actuator.c` and `include/entrance/actuator.h` | Grace owns door and buzzer outputs. Leon's runtime sends each access outcome to this module after its decision. It does not decide whether a card is valid. |
 | `components/entrance/runtime.c` | Send alert requests after the existing access rules return a result. Keep the inside list and schedule as the only authoritative state. |
-| `components/entrance/keypad.c` | Reserve `B` as a Wokwi-only simulated tailgate event and `C` as a read-only evacuation report trigger when the public screen is showing. Neither action changes a person's identity or bypasses access rules. |
-| `components/entrance/runtime.c` report helper | Take a snapshot through the existing entrance state lock/API and print the report to the USB serial monitor. |
+| `components/entrance/keypad.c` | `B` marks a Wokwi-only simulated tailgate and `C` prints a read-only evacuation report when the public screen is showing. Neither action changes a person's identity or bypasses access rules. |
+| `components/entrance/runtime.c` report helper | Take one snapshot under the entrance state lock and print the report to the USB serial monitor. The schedule watcher uses the same report for an after-hours alert. |
 | `components/entrance/dashboard.c` | No new dashboard action is required for the first version. The existing dashboard continues to show current status. |
 
 Do not put alert patterns in `mfrc522.c`; that file should only read cards.
@@ -34,10 +37,11 @@ Do not add a second occupancy list or schedule for the alerts.
 
 ## Denied-access feedback
 
-For every denied card result, log the existing reason and request one short
-buzzer pulse. Include unknown card, schedule closed, clock unavailable,
-anti-passback, and exit-without-entry. The LCD continues to show the person's
-name when known and `DENIED`; the serial line records the exact result.
+For every denied card result, log the existing reason and send the outcome to
+Grace's actuator module when it is integrated. Include unknown card, schedule
+closed, clock unavailable, anti-passback, and exit-without-entry. The LCD
+continues to show the person's name when known and `DENIED`; the serial line
+records the exact result.
 
 Use a second, clearly different pattern for a suspected tailgate (for example,
 three short pulses). Keep the sound pattern in one alert module so the access
@@ -56,8 +60,9 @@ presentation choice only. For a physical board, select a reviewed non-strapping
 pin or an output expander before wiring a buzzer. See Espressif's [ESP32 boot
 strapping guidance](https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32/schematic-checklist.html#strapping-pins).
 
-The diagram and pin table must be updated in the same change that adds the
-buzzer source. Until then, do not claim that the buzzer is wired or working.
+Grace owns the actuator pin map and Wokwi parts. Until that module and circuit
+change are integrated, do not claim that the buzzer or door output is wired or
+working.
 
 ## Anti-passback and tailgating are different
 
@@ -131,13 +136,14 @@ roll-call.
 3. Present an exit card for a user not recorded inside: occupancy stays the
    same and the denied pulse is requested.
 4. Press `B` on the public keypad screen: see a clearly labelled simulated
-   tailgate alert and the distinct three-pulse pattern; occupancy becomes
-   uncertain but no fictional user is added.
+   tailgate alert; occupancy becomes uncertain but no fictional user is added.
+   Grace's buzzer feedback is verified after her actuator module is integrated.
 5. Press `C`: the report lists all names still recorded inside, shows the
    current count and uncertainty, and leaves state unchanged. Repeat with no
    users inside and with SNTP unavailable.
-6. Trigger room motion while an alert plays: Trevor's room light and off-delay
-   continue normally. Confirm this in the one-ESP32 `esp32dev` simulation.
+6. Trigger room motion while Grace's actuator output is active: Trevor's room
+   light and off-delay continue normally. Confirm this in the one-ESP32
+   `esp32dev` simulation after actuator integration.
 
 ## Ownership and implementation order
 

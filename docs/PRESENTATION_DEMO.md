@@ -30,9 +30,13 @@ current occupancy.
    denial. A known person already inside can exit after closing. At close,
    serial logs list any remaining occupants.
 
-Anti-passback denial is part of the current demo. The denied-access buzzer,
-tailgating alert input, and keypad evacuation report are planned, not yet
-implemented. Their design and limits are in
+Anti-passback denial is part of the current demo. On the public keypad screen,
+press `B` to mark a **simulated tailgate** and press `C` to print a read-only
+evacuation roll-call to the USB serial monitor. The tailgate marker makes the
+LCD show that occupancy is uncertain; it does not add a person to the inside
+list. At closing time, the firmware prints an after-hours roll-call if anyone
+is still recorded inside. Grace's buzzer and door actuator are separate work
+and are not yet connected. Feature limits are in
 [`LEON_ENTRANCE_SAFETY_DESIGN.md`](LEON_ENTRANCE_SAFETY_DESIGN.md).
 
 ## Change the schedule at the terminal

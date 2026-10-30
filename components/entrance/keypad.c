@@ -69,6 +69,21 @@ static void handle_key(char key) {
         if(key=='A') {
             mode=UI_PIN;input_size=0;input[0]=0;
             screen_set("ADMIN LOGIN","PIN: ____","# confirms  * clears","D cancels");
+            xSemaphoreGive(ui_mutex);return;
+        }
+        if(key=='B') {
+            mode=UI_MESSAGE;message_until=now+2500;
+            screen_set("SIMULATED EVENT","TAILGATE ALERT","Occupancy uncertain","Check serial log");
+            xSemaphoreGive(ui_mutex);
+            entrance_runtime_note_simulated_tailgate();
+            return;
+        }
+        if(key=='C') {
+            mode=UI_MESSAGE;message_until=now+2500;
+            screen_set("ROLL-CALL SENT","See USB serial log","Report is read-only","");
+            xSemaphoreGive(ui_mutex);
+            entrance_runtime_print_roll_call(false);
+            return;
         }
         xSemaphoreGive(ui_mutex);return;
     }

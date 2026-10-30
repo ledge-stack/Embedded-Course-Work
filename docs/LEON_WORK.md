@@ -26,6 +26,13 @@ room-control contribution.
 - Added shared user, access-event, schedule, and terminal-message definitions
   under include/common, ESP-IDF component build boundaries, and README/build
   documentation.
+- Added a read-only evacuation roll-call on keypad C, an after-hours report
+  when the schedule closes with occupants still inside, and a simulation-only
+  tailgate marker on keypad B. The marker flags occupancy as uncertain and
+  does not invent or add a person.
+- Added `entrance_runtime_set_users()` as the stable roster handoff for
+  Edward's user store. The current demo roster remains active until Edward's
+  source loads and supplies the registered users.
 
 ## Trevor's existing work
 
@@ -42,9 +49,9 @@ those UART roles reuse GPIOs assigned to Leon's entrance hardware.
 
 ## Not claimed as completed here
 
-The denied-access buzzer, tailgate alerts, and evacuation report are planned,
-not implemented. Anti-passback denial already exists, but a reader alone
-cannot detect an extra person passing behind a cardholder. See
+Grace's door and buzzer feedback are not integrated yet. The keypad tailgate
+input is simulation-only; a reader alone cannot detect an extra person passing
+behind a cardholder. See
 [`LEON_ENTRANCE_SAFETY_DESIGN.md`](LEON_ENTRANCE_SAFETY_DESIGN.md) for the
 simulation-only trigger and the sensor needed for real tailgate detection.
 

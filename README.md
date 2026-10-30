@@ -9,18 +9,23 @@ ESP32 based coursework project for a pilot covering the CoCIS main entrance and 
 | Leon Nsitta | Project setup, entrance terminal, access schedule and integration |
 | Kato Trevor | Lecture room terminals, inter-terminal communication and synchronization |
 | Kagimu Edward | SD card storage, serial menus and authentication |
+| Ahurira Grace | Door mechanisms, indicators, buzzer and actuator demo evidence |
 
 ## Current status
 
 Leon implemented the entrance RFID readers, occupancy and anti-passback
 decisions, Kampala access schedule, entrance LCD, keypad schedule controls,
-authenticated Wi-Fi dashboard, shared interfaces, and one-board Wokwi diagram
-in this change. `src/main.c` starts Leon's entrance runtime alongside
-Trevor's existing room runtime. Trevor's room-control, communications,
-synchronization, and storage-queue code remains his contribution under
-`components/trevor/`; it is not claimed as Leon's work. Edward's SD event
-persistence, user management, and serial CLI remain outstanding. See
-[`docs/LEON_WORK.md`](docs/LEON_WORK.md) for the contribution boundary and
+authenticated Wi-Fi dashboard, shared interfaces, one-board Wokwi diagram,
+read-only evacuation roll-call, after-hours still-inside alert, and the user
+roster API for Edward's registered-user store. `src/main.c` starts Leon's
+entrance runtime alongside Trevor's existing room runtime. Trevor's room-control,
+communications, synchronization, and storage-queue code remains his contribution
+under `components/trevor/`; it is not claimed as Leon's work. Edward's SD event
+persistence, registered-user store, and serial CLI remain outstanding. Grace's
+door actuator and feedback module is a separate team contribution. See
+[`docs/COURSEWORK_COMPLETION_PLAN.md`](docs/COURSEWORK_COMPLETION_PLAN.md) for
+the current date-based work split and [`docs/LEON_WORK.md`](docs/LEON_WORK.md)
+for the contribution boundary and
 [`docs/LEON_IMPLEMENTATION_GUIDE.md`](docs/LEON_IMPLEMENTATION_GUIDE.md) for
 Leon and Edward's module boundaries. The current and proposed pin assignments
 are in [`docs/INTERFACES.md`](docs/INTERFACES.md) and
@@ -39,7 +44,8 @@ Trevor's `coordinator`, `room1`, and `room2` environments are separate physical
 roles and do not start Leon's entrance pins. The demo joins `Wokwi-GUEST` and
 uses SNTP for the Kampala access schedule. Entry
 fails closed if time is unavailable; an authorized person who is inside can
-still exit. The demo RFID allowlist contains UID `DE:AD:BE:EF` and `11:22:33:44`.
+still exit. Until Edward's registered-user store calls the roster API, the demo
+RFID allowlist contains UID `DE:AD:BE:EF` and `11:22:33:44`.
 The LCD shows entrance status, schedule, last event, and occupancy. Admins can
 change hours from the keypad (press `A`, enter demo PIN `2468`, then `#`) or the
 Wi-Fi dashboard; schedule changes persist in NVS. The PIN and HTTP dashboard
