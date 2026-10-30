@@ -69,7 +69,7 @@ command interfaces that use those APIs.
 | Edward's assignment | Where it fits | Keep this boundary |
 | --- | --- | --- |
 | Save access, room and lighting events to SD | Implement the storage hook in `components/storage/`; Trevor's storage task calls `tr_storage_append()`. | Do not write to the SD card from RFID, room, keypad, dashboard or CLI tasks. Keep one SD writer and report missing/full-card errors through the existing counters. |
-| Manage registered users | Replace the two fixed demo users with a persistent user source, working with Leon on the entrance public API. | The entrance runtime remains the only owner of the live inside list. CLI code must use an API to update users; it must not edit entrance runtime state directly. |
+| Manage registered users | Replace the two fixed demo users with a persistent user source, working with Leon on the entrance public API. Edward loads a 32-slot roster and calls `entrance_runtime_set_users()`. | Array indexes are stable user IDs. The entrance runtime remains the only owner of the live inside list and rejects a roster update that removes or replaces a person still inside. |
 | Add serial status and record commands | Implement the command layer in `components/cli/`. Read entrance and room status through their public APIs. | Use the existing USB serial console (UART0); do not install a second UART0 driver. Trevor uses UART1/2 only in separate physical-role builds. |
 | Require admin login for serial changes | Extend or replace the presentation verifier through the shared `components/auth/` API. The keypad and Wi-Fi page already call this verifier. | There must be one admin credential and lockout policy for all three interfaces. Do not add a second PIN check in the CLI. |
 | Persist schedule and other settings | The schedule API currently saves hours to NVS namespace `access_cfg`. Coordinate with Leon before moving persistence to SD. | Keep one authoritative schedule and one write API. Do not add a second schedule copy to the CLI, SD layer, keypad or dashboard. |
@@ -95,7 +95,8 @@ and #18 in `docs/IMPLEMENTATION_PLAN.md`). Keep each item demonstrable:
    matched with the source, and build the default `esp32dev` environment.
 3. **RFID access:** demonstrate a known card, an unknown card, and the correct
    reader. The current allowlist is two presentation users, not a user
-   management system.
+  management system. Edward's store can supply its roster with
+  `entrance_runtime_set_users()`; until then, the demo roster remains active.
 4. **Occupancy:** allow a valid entry once, reject a second entry while that
    user is inside, allow their exit, and reject an exit when they are not inside.
 5. **Hours and clock:** use Kampala local time from SNTP. Deny new entry if time
@@ -116,8 +117,9 @@ and #18 in `docs/IMPLEMENTATION_PLAN.md`). Keep each item demonstrable:
   diagram has no door actuator or entry/exit grant output. Add a simulated
   actuator only after choosing unused pins and updating this guide, the diagram,
   and firmware together. Do not take keypad or RFID bus pins for it.
-- The demo users are fixed in code. Registered-user management belongs in the
-  agreed shared design and is not implemented here.
+- The demo users are still the startup roster. The public handoff
+  `entrance_runtime_set_users()` is ready, but registered-user management and
+  the caller in Edward's store are not implemented yet.
 - Access events enter Trevor's shared storage queue, but the weak storage hook
   reports unavailable. The diagram's SD card is not mounted or written.
 - The serial command interface and production admin setup remain integration
@@ -126,9 +128,10 @@ and #18 in `docs/IMPLEMENTATION_PLAN.md`). Keep each item demonstrable:
   run the Wokwi project, and complete the report/video/submission steps. The
   anti-passback behavior exists, but do not label it the team's approved
   innovation until the team records that decision.
-- The denied-access buzzer, tailgate alert input, and evacuation report are
-  planned only. Follow `LEON_ENTRANCE_SAFETY_DESIGN.md`; do not present them as
-  implemented until the code, diagram, build, and Wokwi scenario are complete.
+- Keypad `B` marks a simulated tailgate and keypad `C` prints a read-only
+  evacuation roll-call to the serial monitor. Schedule close prints the same
+  report as an after-hours alert. Grace's buzzer/door module and Wokwi wiring
+  are not integrated yet; do not claim those outputs work.
 
 ## One-chip rules that prevent interference
 

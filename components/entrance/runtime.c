@@ -35,6 +35,7 @@ static bool last_event_valid;
 static char last_person[SYSTEM_NAME_MAX_BYTES];
 static char last_action[8];
 static char last_time[6];
+static bool occupancy_uncertain;
 
 static void wifi_handler(void *arg, esp_event_base_t base,int32_t id,void *data) {
     (void)arg;(void)data;
@@ -108,6 +109,41 @@ static void load_schedule(void) {
     if(a==ESP_OK && b==ESP_OK && entrance_schedule_valid(saved))state.schedule=saved;
 }
 
+void entrance_runtime_print_roll_call(bool after_hours) {
+    system_user users[SYSTEM_MAX_USERS];
+    bool inside[SYSTEM_MAX_USERS];
+    size_t inside_count=0;
+    bool uncertain;
+
+    if(!started)return;
+    xSemaphoreTake(state_mutex,portMAX_DELAY);
+    memcpy(users,state.users,sizeof(users));
+    memcpy(inside,state.inside,sizeof(inside));
+    uncertain=occupancy_uncertain;
+    for(size_t i=0;i<SYSTEM_MAX_USERS;i++)if(inside[i])inside_count++;
+    xSemaphoreGive(state_mutex);
+
+    time_t utc=time(NULL);struct tm local={0};
+    bool time_valid=clock_ready && utc>1760000000 && localtime_r(&utc,&local)!=NULL;
+    ESP_LOGI(TAG,"%s",after_hours?"AFTER-HOURS ALERT - PEOPLE STILL INSIDE":"EVACUATION ROLL-CALL");
+    if(time_valid)ESP_LOGI(TAG,"Time: %02d:%02d EAT",local.tm_hour,local.tm_min);
+    else ESP_LOGI(TAG,"Time: clock not synchronized");
+    ESP_LOGI(TAG,"Recorded inside: %u",(unsigned)inside_count);
+    if(!inside_count)ESP_LOGI(TAG,"- none");
+    for(size_t i=0;i<SYSTEM_MAX_USERS;i++)if(inside[i])
+        ESP_LOGI(TAG,"- %s",users[i].display_name[0]?users[i].display_name:"Unnamed user");
+    ESP_LOGI(TAG,"Occupancy: %s%s",uncertain?"UNCERTAIN":"CONFIRMED",
+        uncertain?" - simulated tailgate needs staff check":"");
+}
+
+void entrance_runtime_note_simulated_tailgate(void) {
+    if(!started)return;
+    xSemaphoreTake(state_mutex,portMAX_DELAY);
+    occupancy_uncertain=true;
+    xSemaphoreGive(state_mutex);
+    ESP_LOGW(TAG,"SIMULATED TAILGATE ALERT: occupancy is uncertain; no person was added to the inside list");
+}
+
 static void schedule_watch_task(void *arg) {
     (void)arg;
     bool previous_open=false, initialized=false;
@@ -119,15 +155,12 @@ static void schedule_watch_task(void *arg) {
                 xSemaphoreTake(state_mutex,portMAX_DELAY);schedule=state.schedule;xSemaphoreGive(state_mutex);
                 bool is_open=entrance_is_open(schedule,(unsigned)(local.tm_hour*60+local.tm_min));
                 if(initialized && previous_open && !is_open) {
-                    system_user users[SYSTEM_MAX_USERS];bool inside[SYSTEM_MAX_USERS];
-                    size_t user_count=0,inside_count=0;
-                    if(entrance_runtime_snapshot(users,inside,SYSTEM_MAX_USERS,&user_count,&inside_count,NULL)) {
-                        if(inside_count) {
-                            ESP_LOGW(TAG,"ACCESS WINDOW CLOSED with %u person(s) still inside; exit remains enabled",(unsigned)inside_count);
-                            for(size_t i=0;i<SYSTEM_MAX_USERS;i++) if(inside[i])
-                                ESP_LOGW(TAG,"still inside: %s (user %u)",users[i].display_name,(unsigned)i);
-                        } else ESP_LOGI(TAG,"access window closed; building occupancy is zero");
-                    }
+                    size_t inside_count;
+                    xSemaphoreTake(state_mutex,portMAX_DELAY);
+                    inside_count=entrance_inside_count(&state);
+                    xSemaphoreGive(state_mutex);
+                    if(inside_count)entrance_runtime_print_roll_call(true);
+                    else ESP_LOGI(TAG,"access window closed; building occupancy is zero");
                 }
                 previous_open=is_open;initialized=true;
             }
@@ -202,7 +235,10 @@ static void display_task(void *arg) {
                 snprintf(start,sizeof(start),"%02u:%02u",start_minute/60u,start_minute%60u);
                 snprintf(end,sizeof(end),"%02u:%02u",end_minute/60u,end_minute%60u);
                 snprintf(rows[1],21,"Hours %.5s-%.5s",start,end);
-                if(status.has_last_event) {
+                if(status.occupancy_uncertain) {
+                    snprintf(rows[2],21,"OCCUPANCY UNCERTAIN");
+                    snprintf(rows[3],21,"Recorded inside: %u",(unsigned)status.inside_count);
+                } else if(status.has_last_event) {
                     snprintf(rows[2],21,"Last: %.7s %.5s",status.last_person,status.last_action);
                     snprintf(rows[3],21,"At %s | Inside %u",status.last_time,(unsigned)status.inside_count);
                 } else {
@@ -233,6 +269,35 @@ esp_err_t entrance_runtime_start(void) {
     ESP_LOGI(TAG,"entrance ready; demo UIDs DE:AD:BE:EF and 11:22:33:44; schedule %02u:%02u-%02u:%02u Kampala time",
         state.schedule.start_minute/60,state.schedule.start_minute%60,
         state.schedule.end_minute/60,state.schedule.end_minute%60);
+    return ESP_OK;
+}
+
+esp_err_t entrance_runtime_set_users(const system_user users[SYSTEM_MAX_USERS]) {
+    if(!started)return ESP_ERR_INVALID_STATE;
+    if(!users)return ESP_ERR_INVALID_ARG;
+
+    for(size_t i=0;i<SYSTEM_MAX_USERS;i++) {
+        if(!users[i].enabled)continue;
+        if(!users[i].uid_size||users[i].uid_size>SYSTEM_UID_MAX_BYTES||
+            !memchr(users[i].display_name,'\0',SYSTEM_NAME_MAX_BYTES))return ESP_ERR_INVALID_ARG;
+        for(size_t j=0;j<i;j++) {
+            if(users[j].enabled&&users[j].uid_size==users[i].uid_size&&
+                memcmp(users[j].uid,users[i].uid,users[i].uid_size)==0)return ESP_ERR_INVALID_ARG;
+        }
+    }
+
+    xSemaphoreTake(state_mutex,portMAX_DELAY);
+    for(size_t i=0;i<SYSTEM_MAX_USERS;i++) {
+        if(state.inside[i]&&(!users[i].enabled||
+            users[i].uid_size!=state.users[i].uid_size||
+            memcmp(users[i].uid,state.users[i].uid,state.users[i].uid_size)!=0)) {
+            xSemaphoreGive(state_mutex);
+            return ESP_ERR_INVALID_STATE;
+        }
+    }
+    memcpy(state.users,users,sizeof(state.users));
+    xSemaphoreGive(state_mutex);
+    ESP_LOGI(TAG,"registered-user roster updated");
     return ESP_OK;
 }
 
@@ -270,6 +335,7 @@ bool entrance_runtime_status(entrance_status *out) {
     out->schedule=state.schedule;
     out->inside_count=entrance_inside_count(&state);
     out->has_last_event=last_event_valid;
+    out->occupancy_uncertain=occupancy_uncertain;
     snprintf(out->last_person,sizeof(out->last_person),"%s",last_person);
     snprintf(out->last_action,sizeof(out->last_action),"%s",last_action);
     snprintf(out->last_time,sizeof(out->last_time),"%s",last_time);
