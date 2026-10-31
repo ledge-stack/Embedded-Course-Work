@@ -1,10 +1,10 @@
 # Coursework implementation status and completion plan
 
-**Status date:** 30 October 2026
+**Status date:** 31 October 2026
 **Submission target recorded in the project plan:** 2 November 2026
 **Purpose:** Record what is in the repository now, what remains to finish the coursework, and a proposed work split for the new member, Ahurira Grace.
 
-The coursework plan says Wokwi simulation and PlatformIO builds are the required demonstration. Label every result as a Wokwi run, host test, or build; physical hardware is not required for the planned submission. Older verification notes remain historical until rerun against the final integrated revision. The current local `sdkconfig.esp32dev` has a generated, uncommitted ESP-IDF 6.1.0 update and triggers a 4 MB versus 2 MB flash-size warning; it is not part of the implementation change.
+The coursework plan says Wokwi simulation and PlatformIO builds are the required demonstration. Label every result as a Wokwi run, host test, or build; physical hardware is not required for the planned submission. PR #23, which added the roll-call and roster handoff, has merged into `main`. A clean build of all four environments passed on 31 October; the integrated Wokwi scenarios still need to run. The current local `sdkconfig.esp32dev` has an uncommitted ESP-IDF 6.1.0 update and triggers a 4 MB versus 2 MB flash-size warning; it is not included in Leon's code changes.
 
 ## Current implementation
 
@@ -15,8 +15,8 @@ The coursework plan says Wokwi simulation and PlatformIO builds are the required
 | Lecture rooms | Two PIR inputs and light outputs; immediate light-on on motion; configurable off-delay; room state protocol with CRC, sequence/session checks, acknowledgements, retries, stale/offline detection, and reconnect snapshots. | PIR detects motion, not continuous occupancy or people count. Confirm the brief accepts this approximation or document/implement a presence sensor. Run the room scenarios in the final demo. Remote schedule/building-count replication and remote room-delay configuration are not implemented. |
 | Synchronization and storage boundary | FreeRTOS task ownership, queues, a mutex-protected snapshot, bounded message queues, a serialized storage consumer, access-event enqueue API, and diagnostics for queue drops and unavailable writes. | The default SD callback reports failure. Queueing an event does not mean it was saved. Implement and verify SD writes, read/configuration ownership, missing/full-card handling, and persistence across reboot. |
 | Communications | Trevor's room protocol and `coordinator`, `room1`, and `room2` firmware roles exist. The default `esp32dev` presentation build runs one ESP32 with two logical rooms and a simulated link switch. | Demonstrate link loss and recovery with the Wokwi switch, check each room role's restart behavior with a host test or separate build/run, and save evidence. The one-board Wokwi demo is not three physical terminals. Access-event transport between terminals is not implemented. |
-| Circuit and build | `diagram.json` contains a one-board demo with the ESP32, two room PIR/light pairs, link switch, two RFID readers, LCD, keypad, and an SD-card part. PlatformIO has `esp32dev`, `coordinator`, `room1`, and `room2` environments. All four environments built successfully on 30 October. | The SD part is not driven by firmware and the new actuator outputs are not yet in the diagram. Publish/open the shared Wokwi project and record its URL; run the final demo. The builds warn that SDK flash size is 2 MB while the selected board specifies 4 MB; resolve the config with the team. |
-| Tests and evidence | Portable Trevor core tests and host adapter tests are present; previous notes record successful builds for the four PlatformIO environments and host tests. | Rerun relevant tests/builds after integration. Add evidence for new SD, CLI, actuator, safety, and end-to-end behavior. Keep host tests, simulator results, and physical hardware results clearly distinguished. |
+| Circuit and build | `diagram.json` contains a one-board demo with the ESP32, two room PIR/light pairs, link switch, two RFID readers, LCD, keypad, and an SD-card part. PlatformIO has `esp32dev`, `coordinator`, `room1`, and `room2` environments. All four environments built cleanly on 31 October. | The SD part is not driven by firmware and the new actuator outputs are not yet in the diagram. Publish/open the shared Wokwi project and record its URL; run the final demo. The builds warn that SDK flash size is 2 MB while the selected board specifies 4 MB; resolve the config with the team. |
+| Tests and evidence | A portable Leon entrance-core test passes for access, anti-passback, safe exit, schedule, and clock rules. Trevor's portable core tests and host adapter tests are also present. | The integrated Wokwi scenarios still need to run. Add evidence for SD, CLI, actuator, safety, and end-to-end behavior after the missing modules arrive. Keep host tests, simulator results, and physical hardware results clearly distinguished. |
 | Report and presentation | Project README, implementation guides, interface notes, and presentation outline exist. | Finish the operation report, all member contribution statements, video walkthroughs, final presentation, shared simulator link, and submission package. Confirm the submission portal and required format with the course team. |
 
 ## Work remaining by member
@@ -29,6 +29,7 @@ The coursework plan says Wokwi simulation and PlatformIO builds are the required
 
 - Keypad `C` prints a read-only evacuation roll-call to serial.
 - The schedule watcher prints the same report as an after-hours alert when people remain inside at closing.
+- Anti-passback and exit-without-entry denials now get explicit alert labels in the serial log; the LCD shows an after-hours still-inside alert.
 - Keypad `B` marks a simulation-only tailgate and changes the display to show occupancy uncertainty. It does not add a person or claim automatic detection.
 - `entrance_runtime_set_users()` is the roster handoff for Edward's user store. It checks UIDs and preserves the identity of anyone currently recorded inside. Edward's store is not present yet, so the demo roster remains active at startup.
 - All four PlatformIO environments build from this branch.
@@ -38,8 +39,8 @@ The coursework plan says Wokwi simulation and PlatformIO builds are the required
 1. Integrate `entrance_actuator_signal()` calls after every access decision when Grace's actuator module is available. Her module is not in this checkout yet; do not replace it with a Leon-owned actuator implementation.
 2. Integrate Edward's persistent roster at startup and after user changes by calling `entrance_runtime_set_users()`. His user-store module is not in this checkout yet.
 3. Keep the existing schedule API available for Edward's authenticated commands. `entrance_runtime_set_schedule()` already validates and persists hours; his command handler must authenticate before calling it.
-4. Publish/open the shared Wokwi project and add its URL to the README. Interactive Wokwi behavior remains unverified.
-5. Coordinate the full Wokwi acceptance run and collect report/video/submission material from all four members.
+4. Publish/open the shared Wokwi project and add its URL to the README. Interactive Wokwi behavior remains unverified; no browser or Wokwi CLI is available in this environment.
+5. Run the full integrated acceptance scenarios after Grace's and Edward's modules arrive. The report section draft is in [`LEON_REPORT_SECTION.md`](LEON_REPORT_SECTION.md); add the Wokwi URL and observed evidence after the run.
 
 ### Kato Trevor — room terminals and communications
 

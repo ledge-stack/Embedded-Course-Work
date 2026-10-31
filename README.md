@@ -27,8 +27,9 @@ door actuator and feedback module is a separate team contribution. See
 the current date-based work split and [`docs/LEON_WORK.md`](docs/LEON_WORK.md)
 for the contribution boundary and
 [`docs/LEON_IMPLEMENTATION_GUIDE.md`](docs/LEON_IMPLEMENTATION_GUIDE.md) for
-Leon and Edward's module boundaries. The current and proposed pin assignments
-are in [`docs/INTERFACES.md`](docs/INTERFACES.md) and
+Leon and Edward's module boundaries. Leon's draft report section is in
+[`docs/LEON_REPORT_SECTION.md`](docs/LEON_REPORT_SECTION.md). The current and
+proposed pin assignments are in [`docs/INTERFACES.md`](docs/INTERFACES.md) and
 [`docs/LEON_ENTRANCE_SAFETY_DESIGN.md`](docs/LEON_ENTRANCE_SAFETY_DESIGN.md).
 
 ## Build and simulation
