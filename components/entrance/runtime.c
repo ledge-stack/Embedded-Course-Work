@@ -125,7 +125,7 @@ void entrance_runtime_print_roll_call(bool after_hours) {
 
     time_t utc=time(NULL);struct tm local={0};
     bool time_valid=clock_ready && utc>1760000000 && localtime_r(&utc,&local)!=NULL;
-    ESP_LOGI(TAG,"%s",after_hours?"AFTER-HOURS ALERT - PEOPLE STILL INSIDE":"EVACUATION ROLL-CALL");
+    ESP_LOGI(TAG,"%s",after_hours?"AFTER-HOURS ALERT - PEOPLE STILL INSIDE":"EVACUATION REPORT");
     if(time_valid)ESP_LOGI(TAG,"Time: %02d:%02d EAT",local.tm_hour,local.tm_min);
     else ESP_LOGI(TAG,"Time: clock not synchronized");
     ESP_LOGI(TAG,"Recorded inside: %u",(unsigned)inside_count);
@@ -199,6 +199,10 @@ static void process_scan(uint8_t reader,const uint8_t *uid,uint8_t uid_size) {
         result==SYSTEM_ACCESS_ALREADY_INSIDE?" (already inside)":
         result==SYSTEM_ACCESS_NOT_INSIDE?" (not inside)":
         result==SYSTEM_ACCESS_UNKNOWN_USER?" (unknown user)":"");
+    if(result==SYSTEM_ACCESS_ALREADY_INSIDE)
+        ESP_LOGW(TAG,"ANTI-PASSBACK ALERT: this person is already recorded inside");
+    else if(result==SYSTEM_ACCESS_NOT_INSIDE)
+        ESP_LOGW(TAG,"EXIT WITHOUT ENTRY ALERT: this person is not recorded inside");
     save_event(&event);
 }
 
@@ -238,6 +242,9 @@ static void display_task(void *arg) {
                 if(status.occupancy_uncertain) {
                     snprintf(rows[2],21,"OCCUPANCY UNCERTAIN");
                     snprintf(rows[3],21,"Recorded inside: %u",(unsigned)status.inside_count);
+                } else if(status.clock_valid && !status.is_open && status.inside_count>0) {
+                    snprintf(rows[2],21,"AFTER-HOURS ALERT");
+                    snprintf(rows[3],21,"Still inside: %u",(unsigned)status.inside_count);
                 } else if(status.has_last_event) {
                     snprintf(rows[2],21,"Last: %.7s %.5s",status.last_person,status.last_action);
                     snprintf(rows[3],21,"At %s | Inside %u",status.last_time,(unsigned)status.inside_count);

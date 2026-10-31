@@ -30,6 +30,9 @@ room-control contribution.
   when the schedule closes with occupants still inside, and a simulation-only
   tailgate marker on keypad B. The marker flags occupancy as uncertain and
   does not invent or add a person.
+- Added explicit anti-passback and exit-without-entry alert messages. The LCD
+  also displays an after-hours alert while the schedule is closed and people
+  remain recorded inside.
 - Added `entrance_runtime_set_users()` as the stable roster handoff for
   Edward's user store. The current demo roster remains active until Edward's
   source loads and supplies the registered users.
@@ -61,3 +64,6 @@ dashboard are demo-only and do not replace production authentication. Wokwi's
 HTTP server access from a browser requires the Private IoT Gateway. The shared
 Wokwi project has not been published or run in the simulator, so this change
 provides a local diagram but no public simulation URL or runtime evidence.
+Leon's report-section draft is in
+[`LEON_REPORT_SECTION.md`](LEON_REPORT_SECTION.md); it still needs a verified
+Wokwi link and observed end-to-end results before submission.
