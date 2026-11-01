@@ -4,6 +4,9 @@ This file records the original coursework implementation sequence and GitHub
 issue backlog. It is a planning/reference document, not a current completion
 checklist; use [`COURSEWORK_COMPLETION_PLAN.md`](COURSEWORK_COMPLETION_PLAN.md)
 for the implemented state and outstanding evidence.
+The lecturer's current submission instruction accepts a Google Drive or GitHub
+link; older backlog references to a required Wokwi URL are superseded. A
+published Wokwi project can still be included as optional supporting evidence.
 
 ## Milestones
 
@@ -20,7 +23,7 @@ Issues #1-18 have been created in GitHub in this dependency order. Each issue bo
 ### M0 - Foundation
 
 1. **Agree shared system data types and module interfaces** - Leon, Trevor and Edward. Define user, access event, occupancy, schedule/configuration and inter-terminal message types. Record ownership, units, time representation, IDs and versioning in `docs/` before feature modules depend on them.
-2. **Create the three-terminal Wokwi circuit** - Leon coordinates; all contribute. Add the entrance and two room ESP32s and required RFID readers, door indicators/actuators, occupancy sensors, lights, SD card and communication link. Record pin assignments and provide a working Wokwi link.
+2. **Create the terminal simulation/circuit** - Leon coordinates; all contribute. Add the entrance and room hardware, record pin assignments, and provide the project files through the lecturer-approved Google Drive or GitHub link. A working Wokwi link is optional supporting evidence.
 3. **Add module skeletons and build instructions** - Leon. Establish `entrance`, `rooms`, `comms`, `storage`, `cli`, `auth` and `common` boundaries in ESP-IDF, and keep a clean PlatformIO build.
 4. **Choose and verify the terminal communication link** - Trevor. Select an approach that works in Wokwi, define message types/payloads/acknowledgements, and demonstrate a message between two terminals before relying on it for integration.
 
@@ -40,7 +43,7 @@ Issues #1-18 have been created in GitHub in this dependency order. Each issue bo
 
 14. **Choose and implement one innovation feature per member** - Leon, Trevor and Edward. Agree the choices in the team and record them in the issue before implementation. Leon proposes an entrance safety feature: anti-passback alerts, a clearly labelled simulated tailgate marker and an evacuation roll-call report. Those software behaviors are implemented; the team still needs to select and record the approved innovation. A real automatic tailgate detector needs a passage counter and has not been implemented. A denied-access buzzer is basic user feedback, not the innovation itself. Trevor may choose a display, ambient-light input or occupancy/energy statistics; Edward may choose CSV export, daily summary, failed-login alert or command history. See [`LEON_ENTRANCE_SAFETY_DESIGN.md`](LEON_ENTRANCE_SAFETY_DESIGN.md).
 15. **Integrate terminals and run end-to-end Wokwi scenarios** - Leon coordinates; all contribute. Demonstrate valid/invalid RFID, entry/exit state, schedule boundary, both room lights and timeout, serial queries/admin updates, storage failure handling, reconnect and concurrent events. For Leon's entrance safety design, demonstrate denied feedback, repeat-card anti-passback alert, a clearly labelled simulated tailgate event, and an evacuation report listing tracked occupants without clearing the inside state.
-16. **Write the system operation report and collect individual contributions** - Leon coordinates. Include architecture, hardware, software design, implemented features, member details, each person's contributions, Wokwi link and report sections from all members.
+16. **Write the system operation report and collect individual contributions** - Leon coordinates. Include architecture, hardware, software design, implemented features, member details, each person's contributions, the Google Drive or GitHub submission link, and report sections from all members. Add a Wokwi link if the team publishes one.
 17. **Record individual code walkthrough videos and prepare presentation** - Each member. Each person explains and demonstrates the code they personally implemented; collect links and confirm all three members can present their work.
 18. **Freeze, build and submit coursework** - Leon coordinates. Resolve integration issues, perform a clean firmware build and complete the report/video submission on Muele by 2 November 2026.
 
@@ -60,4 +63,4 @@ Apply the rules to the exact `main` branch and verify the saved settings in GitH
 
 ## Completion checks
 
-Each feature issue should link to its implementation PR and include the Wokwi scenario or build evidence relevant to its behavior. Integration is complete only when the full multi-terminal flow is demonstrated, not just when individual components compile. Keep the report, Wokwi link, member details, individual contributions and videos in the final release checklist.
+Each feature issue should link to its implementation PR and include the Wokwi scenario or build evidence relevant to its behavior. Integration is complete only when the full system flow is demonstrated, not just when individual components compile. Keep the report, Drive/GitHub submission link, member details, individual contributions, and videos in the final release checklist. A Wokwi URL is optional.

@@ -54,8 +54,9 @@ SD card mounts; the CLI reports when it is unavailable.
 Open the project in Wokwi after building. [`wokwi.toml`](wokwi.toml) loads the
 `esp32dev` firmware from `.pio/build/esp32dev/`. The local circuit and signal
 assignments are in [`diagram.json`](diagram.json) and
-[`docs/INTERFACES.md`](docs/INTERFACES.md). Publishing and validating a shared
-Wokwi project link remains a team action. The presentation sequence is in
+[`docs/INTERFACES.md`](docs/INTERFACES.md). A published Wokwi project is useful
+supporting evidence, but the lecturer accepts a Google Drive or GitHub link for
+the submission. The presentation sequence is in
 [`docs/PRESENTATION_DEMO.md`](docs/PRESENTATION_DEMO.md).
 
 ## Requirements at a glance

@@ -107,5 +107,6 @@ closing boundary the serial log lists any people still inside. The schedule
 defaults to 08:00-18:00 and keypad/dashboard changes persist in NVS. The Wi-Fi
 dashboard listens on HTTP port 80 and requires Wokwi's Private IoT Gateway for
 browser access from outside the simulated ESP32. This dashboard and PIN are
-presentation features, not production security. No Wokwi project URL is claimed
-until the circuit is published and opened successfully in the shared simulator.
+presentation features, not production security. A Wokwi URL can be added as
+optional supporting evidence after publication and verification; the lecturer
+also accepts a Google Drive or GitHub submission link.

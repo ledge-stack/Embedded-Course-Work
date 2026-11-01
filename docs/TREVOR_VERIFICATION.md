@@ -32,6 +32,6 @@ The sandbox stalled when Ninja spawned compiler probes. For verification only, a
 - Interactive Wokwi execution: browser access stalled; successful visual simulation is not claimed. The diagram and built firmware are supplied for the VS Code extension.
 - Three physical ESP32 UART wiring, separate clocks and reboot checks: not executed. Wokwi does not support multiple wired microcontrollers per simulation.
 - Edward's SD/authentication and Leon's entrance/occupancy/schedule integration: outside this module. The default storage hook reports unavailable.
-- Shared Wokwi link, teammate review/PR, agreed innovation, final report and recorded video remain team deliverables.
+- A Google Drive or GitHub submission link, teammate review/PR, agreed innovation, final report and recorded video remain team deliverables. A Wokwi link is optional supporting evidence.
 
 The working copy uses `feat/trevor-room-terminals`. Git metadata in the requested OneDrive repository was restricted, so source files were copied there without changing its branch, index or commits.

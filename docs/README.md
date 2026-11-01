@@ -53,6 +53,8 @@ Portable C test commands and the Windows adapter-test command are in
 [`../test/README`](../test/README). The test runner uses Trevor's current source
 path under `components/trevor/`.
 
-Before submission, the team must provide a published Wokwi project link,
-complete the remaining live checks listed in the completion plan, review each
-member's contribution statement, and add the required report and video links.
+The lecturer accepts a Google Drive or GitHub link for submission; a published
+Wokwi link is optional supporting evidence. Before submission, complete the
+remaining checks listed in the completion plan, review each member's
+contribution statement, and include the report, videos, and project files in
+the Drive/GitHub destination.

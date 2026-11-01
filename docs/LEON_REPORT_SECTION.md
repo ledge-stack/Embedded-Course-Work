@@ -51,8 +51,9 @@ replace a person recorded inside.
 
 Grace's module drives a blue simulation feedback LED with a short grant pulse
 and a longer denial pulse. It does not move a door or sound a buzzer. The
-project is not published, so there is no shared simulator URL. An earlier
-Wokwi run detected the green card at both readers and denied access after
+project is not published, so there is no shared simulator URL. The lecturer
+accepts a Google Drive or GitHub link for submission; a Wokwi URL is optional.
+An earlier Wokwi run detected the green card at both readers and denied access after
 closing. A later Wokwi RFID scenario mounted the SD card, granted the demo
 card's entry and exit during open hours, returned occupancy to zero, and wrote
 both access events to `sdcard/events.csv`. CLI roster/schedule changes, room
@@ -74,7 +75,9 @@ interactive checks.
 - **Host tests:** entrance and Trevor portable core tests passed on 1 November.
   They do not test the keypad, CLI, LED, room shutdown or all card failure cases.
 
-**Wokwi project URL:** pending team publication and verification.
+**Submission link:** add the team's Google Drive or GitHub link.
+
+**Optional Wokwi URL:** add only if the team publishes and verifies the project.
 
 ## Contribution statement
 

@@ -100,8 +100,10 @@ Local evidence from this update:
    rather than an automatic sensor.
    After reboot or a simulated tailgate, occupancy remains uncertain until a
    staff member checks the building and an administrator runs `confirm-empty`.
-6. Save simulator logs/screenshots or video; include the shared Wokwi URL,
-   report, member contribution statements, walkthroughs, and submission proof.
+6. Save simulator logs, screenshots, or video if available. Submit the project,
+   report, member contribution statements, and walkthroughs through the Google
+   Drive or GitHub link accepted by the lecturer. A published Wokwi URL is
+   optional supporting evidence.
 
 The Wokwi credential is not stored in the repository. If the CLI cannot
 authenticate, perform the interactive run in the Wokwi website using a valid
