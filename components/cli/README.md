@@ -1,0 +1,13 @@
+# Kagimu Edward — serial CLI
+
+`runtime.c` reads simple commands from the UART0 console. Read commands show
+system health, people inside, users, room state, schedule, and saved event
+records. `login PIN` opens a 60-second administrator session for schedule edits,
+user add/delete, and `confirm-empty`. User changes go through Leon's roster API
+and are saved to SD with an NVS backup. A person currently inside cannot be
+deleted. `confirm-empty` requires a human building check after reboot or a
+tailgate uncertainty alert.
+
+The default presentation PIN is `2468`; this is a coursework demo verifier,
+not production authentication. Run the combined `esp32dev` firmware to use the
+CLI. UART0 is shared with ESP-IDF log output.

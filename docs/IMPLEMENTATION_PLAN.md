@@ -1,6 +1,9 @@
 # Implementation Plan and GitHub Issue Backlog
 
-This plan turns the coursework brief and team work distribution into an ordered implementation path. The project currently contains only the generated ESP-IDF starter, so the backlog begins with setup and shared interfaces before parallel feature work.
+This file records the original coursework implementation sequence and GitHub
+issue backlog. It is a planning/reference document, not a current completion
+checklist; use [`COURSEWORK_COMPLETION_PLAN.md`](COURSEWORK_COMPLETION_PLAN.md)
+for the implemented state and outstanding evidence.
 
 ## Milestones
 

@@ -1,0 +1,61 @@
+name: CoCIS RFID presentation smoke test
+version: 1
+steps:
+  - wait-serial: "entrance ready;"
+  - wait-serial: "SNTP synchronized;"
+
+  # A green card enters, then a repeated entry is rejected.
+  - set-control:
+      part-id: entry_rfid
+      name: card
+      value: 1
+  - set-control:
+      part-id: entry_rfid
+      name: tagPresent
+      value: 1
+  - wait-serial: "point=entry user=Demo User 2 uid=11223344 result=GRANTED inside=1"
+  - set-control:
+      part-id: entry_rfid
+      name: tagPresent
+      value: 0
+  - delay: 1600ms
+  - set-control:
+      part-id: entry_rfid
+      name: tagPresent
+      value: 1
+  - wait-serial: "ANTI-PASSBACK ALERT"
+  - set-control:
+      part-id: entry_rfid
+      name: tagPresent
+      value: 0
+
+  # The same card exits, and an unregistered red card is denied.
+  - delay: 1600ms
+  - set-control:
+      part-id: exit_rfid
+      name: card
+      value: 1
+  - set-control:
+      part-id: exit_rfid
+      name: tagPresent
+      value: 1
+  - wait-serial: "point=exit user=Demo User 2 uid=11223344 result=GRANTED inside=0"
+  - set-control:
+      part-id: exit_rfid
+      name: tagPresent
+      value: 0
+  - delay: 1600ms
+  - set-control:
+      part-id: entry_rfid
+      name: card
+      value: 3
+  - set-control:
+      part-id: entry_rfid
+      name: tagPresent
+      value: 1
+  - wait-serial: "uid=AABBCCDD result=DENIED inside=0 (unknown user)"
+  - set-control:
+      part-id: entry_rfid
+      name: tagPresent
+      value: 0
+  - delay: 2000ms

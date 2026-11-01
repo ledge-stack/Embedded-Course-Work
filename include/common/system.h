@@ -38,7 +38,9 @@ typedef struct {
     uint8_t uid[SYSTEM_UID_MAX_BYTES];
 } system_access_event;
 
-typedef struct { uint16_t start_minute, end_minute; } system_access_schedule;
+typedef struct {
+    uint16_t start_minute, end_minute;
+} system_access_schedule;
 
 typedef struct {
     uint8_t version;

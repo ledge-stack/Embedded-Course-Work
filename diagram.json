@@ -191,6 +191,34 @@
       "attrs": {
         "value": "10k"
       }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "door_feedback",
+      "top": 760,
+      "left": 640,
+      "attrs": {
+        "color": "blue",
+        "label": "Access feedback LED (GPIO12)"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "door_feedback_resistor",
+      "top": 760,
+      "left": 710,
+      "attrs": {
+        "value": "330"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "door_feedback_pulldown",
+      "top": 805,
+      "left": 790,
+      "attrs": {
+        "value": "10k"
+      }
     }
   ],
   "connections": [
@@ -546,6 +574,36 @@
       "sd_cs_pull:2",
       "esp:3V3",
       "red",
+      []
+    ],
+    [
+      "esp:D12",
+      "door_feedback:A",
+      "blue",
+      []
+    ],
+    [
+      "door_feedback:C",
+      "door_feedback_resistor:1",
+      "blue",
+      []
+    ],
+    [
+      "door_feedback_resistor:2",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "esp:D12",
+      "door_feedback_pulldown:1",
+      "purple",
+      []
+    ],
+    [
+      "door_feedback_pulldown:2",
+      "esp:GND.1",
+      "black",
       []
     ]
   ]

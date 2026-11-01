@@ -1,4 +1,10 @@
-# Verification record — 27 October 2026
+# Trevor subsystem verification record — historical (27 October 2026)
+
+This is a record of Trevor's earlier module checks. For the latest combined
+firmware, integration evidence, and outstanding acceptance work, see
+[`COURSEWORK_COMPLETION_PLAN.md`](COURSEWORK_COMPLETION_PLAN.md). The Windows
+commands and environment details below describe the original verification
+machine and are not the current Fedora workflow.
 
 | Check | Result |
 | --- | --- |

@@ -9,28 +9,21 @@ ESP32 based coursework project for a pilot covering the CoCIS main entrance and 
 | Leon Nsitta | Project setup, entrance terminal, access schedule and integration |
 | Kato Trevor | Lecture room terminals, inter-terminal communication and synchronization |
 | Kagimu Edward | SD card storage, serial menus and authentication |
-| Ahurira Grace | Door mechanisms, indicators, buzzer and actuator demo evidence |
+| Ahurira Grace | Scan feedback LED and its actuator interface |
 
 ## Current status
 
-Leon implemented the entrance RFID readers, occupancy and anti-passback
-decisions, Kampala access schedule, entrance LCD, keypad schedule controls,
-authenticated Wi-Fi dashboard, shared interfaces, one-board Wokwi diagram,
-read-only evacuation roll-call, after-hours still-inside alert, and the user
-roster API for Edward's registered-user store. `src/main.c` starts Leon's
-entrance runtime alongside Trevor's existing room runtime. Trevor's room-control,
-communications, synchronization, and storage-queue code remains his contribution
-under `components/trevor/`; it is not claimed as Leon's work. Edward's SD event
-persistence, registered-user store, and serial CLI remain outstanding. Grace's
-door actuator and feedback module is a separate team contribution. See
-[`docs/COURSEWORK_COMPLETION_PLAN.md`](docs/COURSEWORK_COMPLETION_PLAN.md) for
-the current date-based work split and [`docs/LEON_WORK.md`](docs/LEON_WORK.md)
-for the contribution boundary and
-[`docs/LEON_IMPLEMENTATION_GUIDE.md`](docs/LEON_IMPLEMENTATION_GUIDE.md) for
-Leon and Edward's module boundaries. Leon's draft report section is in
-[`docs/LEON_REPORT_SECTION.md`](docs/LEON_REPORT_SECTION.md). The current and
-proposed pin assignments are in [`docs/INTERFACES.md`](docs/INTERFACES.md) and
-[`docs/LEON_ENTRANCE_SAFETY_DESIGN.md`](docs/LEON_ENTRANCE_SAFETY_DESIGN.md).
+Leon implemented the entrance RFID readers, access and anti-passback decisions,
+Kampala schedule, LCD, keypad, dashboard, roll-call, and roster API. Trevor's
+room sensing, automatic lights, messaging, retries, FreeRTOS synchronization,
+and serialized storage queue live under `components/trevor/`. Edward's SD event
+log, NVS user roster, and UART0 status/admin CLI live in `components/storage/`
+and `components/cli/`. Grace's scan-feedback LED is in `components/actuator/`.
+`src/main.c` starts the combined modules and supplies the entrance inside count
+to the room-light safety rule. The documentation index is
+[`docs/README.md`](docs/README.md); it links to the coursework status, system
+walkthrough, presentation demo, module guides, contribution drafts, and
+pin/interface contract.
 
 ## Build and simulation
 
@@ -45,13 +38,18 @@ Trevor's `coordinator`, `room1`, and `room2` environments are separate physical
 roles and do not start Leon's entrance pins. The demo joins `Wokwi-GUEST` and
 uses SNTP for the Kampala access schedule. Entry
 fails closed if time is unavailable; an authorized person who is inside can
-still exit. Until Edward's registered-user store calls the roster API, the demo
-RFID allowlist contains UID `DE:AD:BE:EF` and `11:22:33:44`.
+still exit. If no saved roster exists, the demo starts with UID `DE:AD:BE:EF`
+and `11:22:33:44`; admin roster changes are saved to the SD card with an NVS
+backup.
 The LCD shows entrance status, schedule, last event, and occupancy. Admins can
 change hours from the keypad (press `A`, enter demo PIN `2468`, then `#`) or the
 Wi-Fi dashboard; schedule changes persist in NVS. The PIN and HTTP dashboard
 are presentation-only. Wokwi browser access to the ESP32 web server requires
 its Private IoT Gateway; with it enabled, open `http://localhost:9080/`.
+The UART0 CLI offers `help`, `status`, `inside`, `rooms`, `users`, `records`, and
+`schedule`. Use `login 2468` before `open HH:MM`, `close HH:MM`, `useradd NAME UIDHEX`,
+`userdel ID`, or `confirm-empty`. Events are appended to `/sdcard/events.csv` when the
+SD card mounts; the CLI reports when it is unavailable.
 
 Open the project in Wokwi after building. [`wokwi.toml`](wokwi.toml) loads the
 `esp32dev` firmware from `.pio/build/esp32dev/`. The local circuit and signal
@@ -77,10 +75,10 @@ Work from GitHub issues. Use one feature branch per issue, open a pull request t
 
 ## Project layout
 
-The ESP-IDF build exposes `main`, `entrance`, `rooms`, `comms`,
-`storage`, `cli`, `auth` and `common` component boundaries. Entrance,
-demo authentication and common are implemented under `components/` with public
-headers under `include/`. Trevor's room, transport and storage-queue
-implementation remains in `components/trevor/`; the rooms/comms/storage targets
-expose integration boundaries over his pre-existing implementation. The serial
-CLI remains an integration task for Edward.
+The ESP-IDF build exposes `main`, `entrance`, `rooms`, `comms`, `storage`,
+`cli`, `auth`, `actuator`, and `common` component boundaries. Firmware
+components are in `components/`, with public headers in `include/`. The `rooms`
+and `comms` folders are interface boundaries backed by Trevor's implementation
+in `components/trevor/`. Folder ownership is summarized in
+[`components/README.md`](components/README.md), with details in
+[`docs/COMPONENT_OWNERSHIP.md`](docs/COMPONENT_OWNERSHIP.md).

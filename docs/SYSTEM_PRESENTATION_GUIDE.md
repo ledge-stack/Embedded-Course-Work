@@ -11,15 +11,14 @@ it. The combined `esp32dev` presentation build uses one ESP32: Leon's entrance
 terminal runs beside Trevor's two simulated room terminals and coordinator.
 The project also has separate builds for the coordinator, Room 1 and Room 2.
 
-All four PlatformIO environments build, and the entrance-core host check
-passes. The Wokwi RFID-reader probe detected the registered green card at
-both readers. The complete entry/exit scenario has not yet shown a grant: the
-simulation ran after the default 08:00-18:00 Kampala window, and the firmware
-correctly denied entry. The keypad PIN verifier was corrected to supply the
-PBKDF2 inputs in the order required by PSA; the updated firmware builds, but
-the PIN still needs a live Wokwi check. Door actuators, SD storage, Edward's
-registered-user store and the serial command menu remain integration work. The
-lecturer should be told which results came from a build, a host test or Wokwi.
+Earlier evidence in the project records all four PlatformIO role builds and an
+RFID-reader probe. The combined `esp32dev` build now includes the SD storage
+component, serial CLI, feedback LED and occupancy safety bridge. The 1 November
+Wokwi scenario mounted the SD card, granted a green-card entry and exit during
+open hours, returned occupancy to zero, and wrote both access events. The
+separate CLI, keypad/dashboard, empty-building shutdown and visual LED checks
+still need their own demonstrations. Tell the lecturer which results came from
+a build, host test or an actual Wokwi session.
 
 ## 1. A short explanation to open the presentation
 
@@ -47,9 +46,16 @@ The ESP32 begins in [`src/main.c`](../src/main.c). The entry function is named
 
 1. `nvs_flash_init()` starts Non-Volatile Storage (NVS), the ESP32's small
    persistent settings area.
-2. `tr_runtime_start()` starts Trevor's room and communications runtime.
-3. When `TR_ROLE` is `0`, `entrance_runtime_start()` starts Leon's entrance
-   runtime too.
+2. In the combined demo, `storage_runtime_start()` initializes the shared SPI
+   bus and tries to mount the SD card. Failure is logged; local control may
+   continue without event persistence.
+3. `tr_runtime_start()` starts Trevor's room and communications runtime and
+   its one-consumer storage queue.
+4. With `TR_ROLE` set to `0`, `actuator_runtime_start()` prepares Grace's
+   feedback LED, then `entrance_runtime_start()` starts Leon's runtime. A saved
+   roster is loaded from NVS if one exists.
+5. `occupancy_bridge_task` passes Leon's inside count to Trevor's room runtime
+   every 250 ms. `cli_runtime_start()` starts Edward's UART0 command reader.
 
 `ESP_ERROR_CHECK()` checks each startup result. If a required subsystem cannot
 start, the firmware stops with an error instead of pretending the whole system
@@ -68,6 +74,11 @@ The two room tasks begin sampling their PIR inputs. When a PIR output changes
 to motion, the room core immediately turns on that room's light state. When
 motion stops, the light stays on for the configured off-delay, five seconds by
 default. New motion during the delay restarts the wait.
+
+The combined demo adds one building-level safety rule. Leon's entrance count
+flows through `occupancy_bridge_task`; if that known count is zero, Trevor's
+runtime forces the effective room light outputs off. Local motion state is
+kept, and an unknown count does not count as an empty building.
 
 Each room sends state changes to the coordinator. The coordinator checks the
 message's room number, sequence, session and CRC, updates a shared room
@@ -131,8 +142,9 @@ The result has three routes:
   warning text.
 - The access event is handed to Trevor's storage queue. **A successful queue
   handoff means “waiting to be stored,” not “saved to the SD card.”** The
-  current weak storage callback reports unavailable; persistent SD writes are
-  not implemented yet.
+  storage task appends it to `/sdcard/events.csv`; a failed mount or write is
+  reported in serial diagnostics. The 1 November RFID scenario mounted the
+  card and wrote both entry and exit records to `sdcard/events.csv`.
 
 ### Step 6: Admin changes the hours
 
@@ -146,6 +158,12 @@ after it ends is treated as an overnight window. Equal start and end times are
 rejected. New entry requires a valid clock and an open schedule. A known person
 already recorded inside may exit after closing, so the schedule cannot trap an
 occupant inside.
+
+Edward's UART0 CLI also supports read-only queries (`status`, `inside`,
+`rooms`, `users`, `records`, and `schedule`). Type `login 2468` to open a
+60-second admin session, then use `open 08:00`, `close 18:00`,
+`useradd NAME UIDHEX`, or `userdel ID`. The command `confirm-empty` is permitted
+only after checking that the building is physically empty.
 
 ### Step 7: Closing time and the safety report
 
@@ -162,6 +180,12 @@ On the public keypad screen:
 - Press **C** to print a read-only evacuation report to USB serial. It does not
   clear the inside list.
 
+After a reboot, the inside list is volatile, so the system marks occupancy as
+uncertain instead of assuming that nobody is inside. Rooms do not force their
+lights off while the entrance count is uncertain. Once staff have physically
+checked an empty building, an administrator can use the CLI's `confirm-empty`
+command to restore an authoritative zero count.
+
 An RFID reader cannot detect a person following someone through the door. The
 keypad event is a repeatable simulator input, not real tailgate detection. A
 staff member must reconcile the list with the doorway if occupancy becomes
@@ -171,9 +195,12 @@ uncertain.
 
 ```mermaid
 flowchart TD
-    MAIN[app_main in src/main.c] --> NVS[NVS settings]
+    MAIN[app_main in src/main.c] --> NVS[NVS settings and saved roster]
+    MAIN --> SD[Edward SD mount and event file]
     MAIN --> TR[ Trevor room and communications runtime ]
+    MAIN --> ACT[Grace feedback LED]
     MAIN --> ENT[ Leon entrance runtime, TR_ROLE 0 only ]
+    MAIN --> CLI[Edward UART0 CLI]
     ENT --> RFID[Two MFRC522 readers]
     RFID --> CORE[Entrance rules and inside list]
     CORE --> LCD[20 by 4 LCD]
@@ -181,7 +208,7 @@ flowchart TD
     CORE --> WEB[Wi-Fi status and schedule page]
     CORE --> EVENTS[Access event handoff]
     EVENTS --> SQ[ Trevor storage queue ]
-    SQ --> SD[SD writer integration pending]
+    SQ --> SD
     TR --> ROOMS[Room 1 and Room 2 tasks]
     ROOMS --> PIRS[PIR sensors]
     ROOMS --> LIGHTS[Room light outputs]
@@ -194,8 +221,8 @@ flowchart TD
 | --- | --- | --- |
 | Leon | RFID access decisions, inside list, schedule, entrance display/keypad/dashboard and the entrance report. | `entrance_runtime_snapshot()`, `entrance_runtime_status()` and `entrance_runtime_set_schedule()`. Edward's user store should call `entrance_runtime_set_users()`. |
 | Kato Trevor | Room motion/off-delay logic, room communication protocol, coordinator, queues, shared room snapshot and serialized storage queue. | The `tr_runtime_*` functions in `include/trevor/runtime.h`. |
-| Kagimu Edward | Planned SD persistence, registered users and serial administration. | The existing storage hook and entrance APIs, after his modules are added. |
-| Ahurira Grace | Planned door actuators, indicators, buzzer and their simulation tests. | An agreed actuator interface after her module is available. The current circuit does not yet operate a door or buzzer. |
+| Kagimu Edward | SD event records and roster, NVS backup, serial queries, and authenticated schedule/user changes. | `storage_runtime_*()` and `cli_runtime_start()`; roster/schedule changes pass through Leon's API. |
+| Ahurira Grace | Combined-demo scan feedback LED and its pin/wiring contract. | `actuator_runtime_signal()`; it is visual feedback and does not unlock a door. |
 
 The inside list has one owner: Leon's entrance core. A room or storage module
 must not create another copy of the authoritative occupant list. Trevor's room
@@ -278,10 +305,11 @@ the hardware-facing tasks.
   schedule, authentication, RFID readers, LCD and the entrance tasks.
 - `process_scan()` gets time, calls the core rules, updates last-event details,
   logs the result and queues a compact event for Trevor's storage owner.
-- `entrance_runtime_set_users()` is the handoff for Edward's future registered
-  user source. It validates UIDs, prevents duplicate UIDs, preserves fixed
-  array positions as user IDs, and rejects replacing someone who is currently
-  inside. Until Edward calls it, the demo users remain in use.
+- Edward's storage runtime loads the saved roster and supplies it through
+  `entrance_runtime_set_users()`. The API validates UIDs, prevents duplicates,
+  preserves fixed array positions as user IDs, and rejects replacing someone
+  who is currently inside. The two demo users are used when no saved roster is
+  available.
 - `entrance_runtime_set_schedule()` is the one schedule-write function. It
   validates and persists the hours before updating the live schedule.
 - `display_task()` checks the screen every 100 ms but writes to the LCD only
@@ -351,14 +379,15 @@ other modules to agree on data without sharing private state.
 
 | Folder or file | Purpose |
 | --- | --- |
-| `src/` | Application entry point. `main.c` starts NVS and the runtimes. |
+| `src/` | Shared integration startup. `main.c` orders the module startup and count bridge. |
 | `components/entrance/` | Leon's entrance rules, RFID driver, runtime, LCD, keypad and Wi-Fi page. |
 | `components/auth/` | Shared presentation PIN verifier and lockout. |
 | `components/trevor/` | Trevor's room core and FreeRTOS runtime. This is where the working room and communication implementation currently lives. |
 | `components/rooms/` | ESP-IDF integration boundary for room APIs; implementation is supplied by Trevor's component. |
 | `components/comms/` | Integration boundary for communications; the working protocol/runtime remains in `components/trevor/`. |
-| `components/storage/` | Integration boundary for persistence. Trevor provides the serialized queue; Edward's SD-card writer is still pending. |
-| `components/cli/` | Integration boundary for Edward's serial menu; the command handlers are still pending. |
+| `components/storage/` | **Kagimu Edward:** SD mount/event writer, SD roster with NVS backup, and synchronized record reads. |
+| `components/cli/` | **Kagimu Edward:** UART0 status/read commands and 60-second admin session. |
+| `components/actuator/` | **Ahurira Grace:** scan-result LED feedback; no physical door lock. |
 | `components/common/` | ESP-IDF target for common headers and shared types. |
 | `include/` | Public headers. Modules include these instead of reaching into another module's private C file. |
 | `test/` | Core and integration test sources. `test_entrance.c` is a portable entrance-rule check. |
@@ -368,7 +397,7 @@ other modules to agree on data without sharing private state.
 | `lib/` | Reserved for project-local libraries; no custom library is currently required. |
 | `platformio.ini` | Defines the four PlatformIO environments and sets `TR_ROLE`. |
 | `CMakeLists.txt` files | Tell ESP-IDF which source files and components to compile. Each component has its own CMake file. |
-| `sdkconfig` and `sdkconfig.esp32dev` | ESP-IDF build configuration. A local generated SDK config currently causes a 2 MB versus 4 MB flash-size warning in some roles; it is not part of the entrance feature. |
+| `sdkconfig.*` | ESP-IDF build settings. All four role configs now match the selected 4 MB ESP32 board. |
 | `diagram.json` | Wokwi parts and electrical connections for the one-board presentation circuit. |
 | `wokwi.toml` | Points Wokwi at the compiled `esp32dev` firmware and ELF files. |
 
@@ -386,11 +415,12 @@ other modules to agree on data without sharing private state.
 | LCD I2C SDA / SCL | 21 / 22 | Connects the LCD through its I2C backpack at address `0x27`. |
 | Keypad row outputs | 14 / 15 / 16 / 17 | The ESP32 activates one row at a time while scanning. |
 | Keypad column inputs | 34 / 35 / 36 / 39 | Read the pressed key. These pins are input-only and need external 10 kOhm pull-ups. |
-| microSD chip select | 2 | Reserved in the Wokwi diagram and shares the RFID SPI wires. SD firmware support is not yet implemented. The 10 kOhm pull-up keeps chip select inactive at boot. |
+| microSD chip select | 2 | Shares the RFID SPI wires; the 10 kOhm pull-up keeps CS inactive at boot. |
+| Access feedback LED | 12 | Blue Wokwi LED through a 330 Ohm resistor; an external 10 kOhm pulldown holds boot-strap GPIO12 low during reset. |
 | USB serial console | UART0 | Logs from both main modules appear at 115200 baud. Do not assign another console driver to UART0. |
 
-The diagram contains no connected door actuator, buzzer or physical tailgate
-sensor. Grace's output pins must be agreed before those parts are added. GPIO
+The diagram contains no connected door lock, buzzer or physical tailgate
+sensor. The feedback LED only signals scan results. GPIO
 6 through 11 are reserved for flash and must not be assigned to peripherals.
 GPIO 34 through 39 cannot drive outputs. Pins 0, 2, 5, 12 and 15 affect ESP32
 boot strapping, so circuits on these pins need special care during reset.
@@ -462,10 +492,10 @@ events. Queue sends are non-blocking. If a queue is full, the runtime counts
 and logs the dropped event rather than freezing the room-control task.
 
 Only the storage task calls `tr_storage_append()`. This single-writer pattern
-prevents two tasks from writing the SD card at once. The current hook is a
-placeholder that returns failure, so queueing does not mean data has been
-saved. Edward's SD implementation must replace it and report actual write
-success.
+prevents two tasks from writing the SD card at once. A mutex also protects
+Edward's CLI record reads from an event write. Queueing still does not mean data
+has been saved: callers count write failures, and the SD card must be mounted
+for `/sdcard/events.csv` to receive the record.
 
 ### Why do loops call `vTaskDelay()`?
 
@@ -582,10 +612,11 @@ Useful messages to show during a demo include:
 9. **Show the admin path.** Change opening/closing hours using the keypad or
    dashboard, then show the NVS-backed schedule. The PIN and web page are
    presentation authentication only.
-10. **State the limitations.** SD writes, persistent user management, serial
-    administration and actuators remain integration work. The end-to-end RFID
-    occupancy demonstration is also pending: do not claim it is complete until
-    the log shows a granted entry and exit and the LCD count changes accordingly.
+10. **State the limitations.** The SD mount/access-event writes, entry/exit
+    round trip, and occupancy returning to zero passed one Wokwi scenario.
+    Roster changes, CLI commands, empty-building shutdown, and visual LED
+    feedback still need separate observed checks. The LED is feedback only and
+    does not actuate a door.
 
 ### If the simulator starts but the LCD stays blank
 
@@ -628,8 +659,10 @@ A mutex protects one shared value while it is being read or changed. A queue
 passes a complete event to another task so that task can process it later.
 
 **Does the storage queue prove the card event was saved?**
-No. It proves only that the event was accepted into a RAM queue. The current
-storage callback reports unavailable. SD persistence must be added and tested.
+No. It proves only that the event was accepted into a RAM queue. The storage
+task then appends it to the mounted SD card; unavailable or failed writes are
+counted in diagnostics. The entry/exit Wokwi scenario verified two event writes,
+but full-card and recovery behavior still need a live check.
 
 **How does the system know the exact number of people in a building?**
 It counts registered cards that have been granted entry and not yet granted
@@ -652,22 +685,21 @@ UART demonstration is a separate test.
 ## 11. Current status and evidence
 
 - All four PlatformIO environments (`esp32dev`, `coordinator`, `room1` and
-  `room2`) built successfully on 31 October 2026 after the PIN-verifier fix.
-  The three separate role builds report a 2 MB versus 4 MB flash-size warning.
+  `room2`) built successfully on 1 November 2026 after the integrated changes.
+  The role configs now match the 4 MB board size.
 - The portable entrance-core test passed for entry, anti-passback, safe exit,
   invalid exit, closed hours and unavailable clock.
-- The local `diagram.json` connects both MFRC522 readers to the firmware's
-  shared SPI bus. The Wokwi CLI reader probe detected the green card at both
-  readers. The complete entry/exit scenario still needs to show a granted
-  entry and return occupancy to zero during open hours.
+- The local `diagram.json` connects both MFRC522 readers and the SD card to the
+  shared SPI bus. The Wokwi CLI scenario passed: the card mounted, the green
+  demo card entered and exited, occupancy returned to zero, and both access
+  records were written to SD.
 - The Wokwi project has not been published. No public project URL is claimed.
-  The full entry/exit scenario was denied at 19:12 Kampala time because the
-  configured access window had closed; this confirms fail-closed behavior,
-  not a successful occupancy round trip. The PIN correction has not yet been
-  exercised in a live Wokwi run.
-- The local generated `sdkconfig.esp32dev` change is uncommitted. Some
-  auxiliary build roles report a 2 MB versus 4 MB flash-size mismatch; the
-  configuration needs a team decision before it is committed.
+  A previous out-of-hours scan was denied as expected; the latest scenario
+  verified a granted entry and exit during open hours. Keypad/dashboard/CLI
+  authentication, roster persistence, room shutdown, and visual LED pulses
+  still need their own Wokwi checks.
+- The pre-existing local `sdkconfig.esp32dev` change remains untouched; the
+  three other role configs were aligned to 4 MB and rebuilt.
 - PR #23, which added the earlier roll-call and roster handoff, and PR #24,
   which added the explicit safety alerts and entrance-core check, are merged.
 

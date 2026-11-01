@@ -30,3 +30,4 @@ steps:
       part-id: exit_rfid
       name: tagPresent
       value: 0
+  - delay: 2000ms

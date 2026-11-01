@@ -24,7 +24,7 @@ room-control contribution.
   keypad shows a checking message while it verifies or saves a time.
 - Added the one-ESP32 Wokwi diagram, RFID/LCD/keypad pin plan, and
   presentation steps. The diagram includes the two-room demo hardware and
-  microSD card, but SD mounting and writes are not implemented here.
+  microSD card; Edward's storage module now mounts the card and writes events.
 - Added shared user, access-event, schedule, and terminal-message definitions
   under include/common, ESP-IDF component build boundaries, and README/build
   documentation.
@@ -54,21 +54,24 @@ those UART roles reuse GPIOs assigned to Leon's entrance hardware.
 
 ## Not claimed as completed here
 
-Grace's door and buzzer feedback are not integrated yet. The keypad tailgate
-input is simulation-only; a reader alone cannot detect an extra person passing
-behind a cardholder. See
+Grace's scan-feedback LED is now integrated through `components/actuator/`.
+It gives different pulse lengths for allowed and denied scans, but does not
+operate a door or buzzer. The keypad tailgate input is simulation-only; a
+reader alone cannot detect an extra person passing behind a cardholder. See
 [`LEON_ENTRANCE_SAFETY_DESIGN.md`](LEON_ENTRANCE_SAFETY_DESIGN.md) for the
 simulation-only trigger and the sensor needed for real tailgate detection.
 
-Edward's SD-card event persistence, registered-user management, and serial
-command handlers remain integration work. This contribution's PIN and Wi-Fi
+Edward's SD event persistence, saved user roster, and serial command handlers
+are now integrated in `components/storage/` and `components/cli/`. The Wokwi
+RFID scenario confirmed the SD mount and entry/exit event writes; user editing
+and CLI commands still need interactive checks. This contribution's PIN and Wi-Fi
 dashboard are demo-only and do not replace production authentication. Wokwi's
 HTTP server access from a browser requires the Private IoT Gateway. The local
 Wokwi RFID-reader probe detected the registered green card (`11:22:33:44`) at
-both readers. The entry-flow run happened after the default 08:00-18:00
-Kampala window and correctly denied the entry card; a granted occupancy
-round-trip is still not demonstrated. The latest PIN correction has built but
-has not been tested in Wokwi. The project has not been published, so there is
-no public simulation URL. Leon's report-section draft is in
-[`LEON_REPORT_SECTION.md`](LEON_REPORT_SECTION.md); it still needs a verified
-Wokwi link and observed end-to-end results before submission.
+both readers. An earlier entry-flow run was after the default 08:00-18:00
+Kampala window and correctly denied the card. A later Wokwi scenario granted
+entry and exit during open hours and stored both events on SD. The project has
+not been published, so there is no shared simulation URL. Remaining evidence
+includes user/CLI changes, room behavior, feedback LED, and a published link.
+Leon's report section is in
+[`LEON_REPORT_SECTION.md`](LEON_REPORT_SECTION.md).

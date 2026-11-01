@@ -21,11 +21,12 @@ bool entrance_is_inside(const entrance_state *state, uint32_t user_id);
 /* Apply an event with its source sequence. Duplicate and older event IDs are
  * ignored; IDs are nonzero and use 32-bit serial-number ordering. */
 system_access_result entrance_apply_event(entrance_state *state, uint32_t event_id,
-    system_access_point point, const uint8_t *uid, size_t uid_size,
-    bool clock_valid, unsigned local_minute, uint32_t *user_id);
-system_access_result entrance_apply_scan(entrance_state *state,
-    system_access_point point, const uint8_t *uid, size_t uid_size,
-    bool clock_valid, unsigned local_minute, uint32_t *user_id,
-    uint32_t *event_id);
+                                          system_access_point point, const uint8_t *uid,
+                                          size_t uid_size, bool clock_valid, unsigned local_minute,
+                                          uint32_t *user_id);
+system_access_result entrance_apply_scan(entrance_state *state, system_access_point point,
+                                         const uint8_t *uid, size_t uid_size, bool clock_valid,
+                                         unsigned local_minute, uint32_t *user_id,
+                                         uint32_t *event_id);
 
 #endif

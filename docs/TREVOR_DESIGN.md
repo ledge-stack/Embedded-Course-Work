@@ -8,7 +8,7 @@ Physical deployment uses a coordinator with two dedicated 115200-baud UART links
 
 Wokwi currently supports only one microcontroller per simulation (https://docs.wokwi.com/faq). The default demo therefore runs three logical terminals on one ESP32, passing the actual encoded frames through FreeRTOS queues. Hardware role builds use the same portable room/protocol/reliability code with UART transport. The single-chip demo is not evidence of physical multi-ESP32 UART operation.
 
-One task owns the coordinator receiver state. A mutex protects shared snapshots and configuration. A queue feeds a single storage-consumer task, which calls an overridable storage hook. The hook defaults to an explicit unavailable result and counted drops; no SD persistence is claimed. Queue saturation is visible in diagnostics and cannot block local light control. Access events are an opaque, bounded payload for Leon's integration; their admission shares the storage queue. Shared access/schedule authority stays with Leon and Edward.
+One task owns the coordinator receiver state. A mutex protects shared snapshots and configuration. A bounded queue feeds one storage-consumer task, which calls Edward's SD event writer. Queue saturation and write failures appear in diagnostics and cannot block local light control. Access events use a bounded payload and share the storage queue. Shared access/schedule authority stays with Leon and Edward.
 
 Retry refinement: after five transmissions at 500 ms intervals, expire the unacknowledged snapshot and publish a fresh one. This prevents an ACK-only outage from permanently hiding newer room activity. Count timeouts explicitly. Room-state synchronization coalesces intermediate events during an outage; it is not a lossless event journal.
 

@@ -21,7 +21,7 @@ typedef struct {
     uint32_t timeouts[2];
     uint32_t duplicates, stale_frames, transport_drops, storage_queue_drops, storage_write_failures;
 } tr_system_view;
-enum tr_event_kind { TR_EVENT_ROOM=1, TR_EVENT_ACCESS=2 };
+enum tr_event_kind { TR_EVENT_ROOM = 1, TR_EVENT_ACCESS = 2 };
 typedef struct {
     enum tr_event_kind kind;
     uint64_t received_ms;
@@ -36,11 +36,13 @@ bool tr_runtime_snapshot(tr_system_view *out);
 /* Local room configuration only: call on the relevant room terminal. Demo
  * hosts both rooms. Physical coordinator returns ESP_ERR_NOT_SUPPORTED. */
 esp_err_t tr_runtime_set_off_delay(uint8_t room, uint32_t delay_ms);
+/* Entrance coordinator is authoritative. Unknown count keeps room behavior local. */
+esp_err_t tr_runtime_set_building_inside_count(size_t count, bool authoritative);
 /* Thread-safe, nonblocking admission. False means caller must retry/report loss.
  * True means queued, NOT durably persisted. Requires runtime_start first. */
 bool tr_runtime_record_access(const void *data, size_t length);
-/* Edward overrides this weak hook; exactly one storage task invokes it.
- * Return true only when stored. Default returns false (storage unavailable).
- * Other storage operations must be routed through the same owner task. */
+/* The storage component supplies a strong implementation for the combined
+ * demo. Exactly one Trevor storage task invokes it. Return true only when
+ * durably written. Physical role builds without an SD mount return false. */
 bool tr_storage_append(const tr_storage_event *event);
 #endif
