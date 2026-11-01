@@ -2,10 +2,10 @@
 
 ## System Operation Report
 
-**Prepared:** 1 November 2026  
-**Coursework:** Embedded Systems  
-**Project repository:** [Embedded-Course-Work](https://github.com/ledge-stack/Embedded-Course-Work)  
-**Implementation branch:** [`feat/system-presentation-guide`](https://github.com/ledge-stack/Embedded-Course-Work/tree/feat/system-presentation-guide)
+- **Prepared:** 1 November 2026
+- **Coursework:** Embedded Systems
+- **Project repository:** [Embedded-Course-Work](https://github.com/ledge-stack/Embedded-Course-Work)
+- **Implementation branch:** [`feat/system-presentation-guide`](https://github.com/ledge-stack/Embedded-Course-Work/tree/feat/system-presentation-guide)
 
 ## 1. Purpose and scope
 
