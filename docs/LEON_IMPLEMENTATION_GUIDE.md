@@ -74,7 +74,7 @@ command interfaces that use those APIs.
 | Add serial status and record commands | The command layer is implemented in `components/cli/`. It reads entrance and room status through their public APIs. | Use the existing USB serial console (UART0); do not install a second UART0 driver. Trevor uses UART1/2 only in separate physical-role builds. |
 | Require admin login for serial changes | The CLI uses the shared `components/auth/` verifier also used by the keypad and Wi-Fi page. | Keep one demo credential and lockout policy for all three interfaces; do not add a second PIN check in the CLI. |
 | Persist schedule and other settings | The schedule API currently saves hours to NVS namespace `access_cfg`. Coordinate with Leon before moving persistence to SD. | Keep one authoritative schedule and one write API. Do not add a second schedule copy to the CLI, SD layer, keypad or dashboard. |
-| Choose an innovation feature | Agree it with the team and record it before claiming it in the report. | Existing anti-passback is implemented by Leon, but the team has not recorded it as the approved innovation. |
+| Choose an innovation feature | The repository now contains the safety bundle, feedback LED, empty-building light shutoff, room-link recovery, and room-light usage report. | Record which implemented feature or bundle the team will present as its formal innovation. |
 
 Leon added the current PIN verifier only to make the presentation keypad and
 dashboard work. Treat it as demo authentication, not Edward's finished
@@ -124,14 +124,14 @@ and #18 in `docs/IMPLEMENTATION_PLAN.md`). Keep each item demonstrable:
 - Edward's serial roster manager calls `entrance_runtime_set_users()` and saves
   the roster on SD with an NVS backup. Access and room events use the SD event
   writer; roster editing and CLI commands still need interactive Wokwi checks.
-- The UART0 CLI provides queries and authenticated schedule/user operations.
+- The UART0 CLI provides queries, the read-only room-light `usage` report, and
+  authenticated schedule/user operations.
   The `2468` PIN and HTTP page remain presentation-only authentication.
 - Occupancy is volatile across reboot. The firmware marks it uncertain until
   an administrator confirms the building is empty after a physical check.
-- The team still needs to agree and record the innovation feature, publish and
-  run the Wokwi project, and complete the report/video/submission steps. The
-  anti-passback behavior exists, but do not label it the team's approved
-  innovation until the team records that decision.
+- The team still needs to record which implemented feature or bundle it will
+  present as its innovation. Follow the lecturer's current Google Drive or
+  GitHub submission-link instruction; a Wokwi link is optional.
 - Keypad `B` marks a simulated tailgate and keypad `C` prints a read-only
   evacuation roll-call to the serial monitor. Schedule close prints the same
   report as an after-hours alert. Grace's blue LED indicates scan results; no

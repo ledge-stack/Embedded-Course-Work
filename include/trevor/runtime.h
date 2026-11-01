@@ -17,6 +17,9 @@ typedef struct {
 } tr_room_view;
 typedef struct {
     tr_room_view rooms[2];
+    /* Runtime totals since boot; no watts are assumed, so these are not kWh. */
+    uint64_t light_on_ms[2];
+    uint64_t empty_building_saved_ms[2];
     uint32_t retries[2];
     uint32_t timeouts[2];
     uint32_t duplicates, stale_frames, transport_drops, storage_queue_drops, storage_write_failures;

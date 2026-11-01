@@ -155,10 +155,12 @@ occupancy is uncertain, the system does not assume the building is empty. A
 room-link outage makes remote status stale but does not stop local room light
 control.
 
-The safety feature set also includes anti-passback alerts, a read-only keypad
-roll-call on `C`, and a closing-time report. These improve monitoring, but the
-team has not recorded a formally approved innovation selection in the project
-issues.
+**Implemented innovation candidate — Occupancy-Aware Safety and Lighting
+Analytics:** this package combines anti-passback alerts, a simulated tailgate
+uncertainty marker, a read-only keypad roll-call on `C`, a closing-time report,
+grant/deny LED feedback, empty-building light shutoff, room-link recovery, and a
+room-light usage report. The team should record this package as its selected
+innovation in the project issue before submission.
 
 ## 6. Data storage and serial management
 
@@ -178,6 +180,7 @@ The UART0 menu is available at 115200 baud:
 | `status` | Show system and room synchronization status. |
 | `inside` | Show the current inside list and occupancy count. |
 | `rooms` | Show room motion, light, delay, and online status. |
+| `usage` | Show per-room light-on time and time suppressed by the known-empty rule since boot. |
 | `users` | Show registered users. |
 | `records` | Read recent SD event records. |
 | `schedule` | Show current access hours. |
@@ -229,15 +232,16 @@ the exact work they completed before the group submits it.
 
 ## 9. Verification and known limitations
 
-- The entrance rules and Trevor's portable core tests pass on the host.
+- The entrance rules and Trevor's portable core tests pass on the host; the
+  Trevor suite includes deterministic tests for the new usage-time accounting.
 - PlatformIO builds pass for `esp32dev`, `coordinator`, `room1`, and `room2`.
 - A Wokwi entry/exit scenario previously mounted the SD card, granted a demo
   card's entry and exit during open hours, returned occupancy to zero, and
   wrote both access events.
 - A later expanded Wokwi test ended with WebSocket error 1006 before its serial
   assertions completed. Schedule denial at the exit door, serial administration,
-  roster persistence, empty-building shutdown, LED pulses, SD failure recovery,
-  and reboot behavior remain to be demonstrated.
+  roster persistence, empty-building shutdown, LED pulses, the serial `usage`
+  command, SD failure recovery, and reboot behavior remain to be demonstrated.
 - The one-board diagram demonstrates logical modules, not three physically
   connected ESP32s. The feedback LED is not a door lock, the tailgate marker is
   simulated, and the live occupancy list is volatile.

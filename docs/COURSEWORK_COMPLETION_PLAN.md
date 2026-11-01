@@ -29,6 +29,9 @@ from simulation evidence. Folder ownership is also listed in
   snapshot and a single serialized event-storage worker.
 - In the one-board presentation build, room lights are forced off when Leon's
   known inside count is zero. Unknown count does not mean empty.
+- Per-room light-on time and time suppressed by the known-empty rule are
+  counted since boot and exposed through the serial `usage` command. These are
+  runtime-duration metrics, not measured energy or kWh.
 
 ### Kagimu Edward — storage and serial administration
 
@@ -37,7 +40,7 @@ from simulation evidence. Folder ownership is also listed in
   access and room events. Missing-card or write failures are counted and do not
   stop local room control.
 - Registered-user roster saved to SD with an NVS backup and loaded at startup.
-- UART0 commands: `help`, `status`, `inside`, `rooms`, `users`, `records`,
+- UART0 commands: `help`, `status`, `inside`, `rooms`, `usage`, `users`, `records`,
   `schedule`, `login PIN`, and `logout`. A 60-second admin session is required
   for `open HH:MM`, `close HH:MM`, `useradd NAME UIDHEX`, and `userdel ID`.
 - User updates go through Leon's validation API. A user who is inside cannot
@@ -73,7 +76,8 @@ Local evidence from this update:
   was added; the three auxiliary SDK configs match the board's 4 MB flash size.
 - The portable entrance test passed for schedule enforcement at entry and exit,
   denied exit with unchanged occupancy, anti-passback, invalid exit and clock
-  failure. Trevor's portable core suite also passed.
+  failure. Trevor's portable core suite, including light-use time accounting,
+  also passed.
 - On 1 November, the Wokwi RFID scenario mounted the SD card, granted the
   green demo card's entry and exit during open hours, returned occupancy to
   zero, and wrote both access records into `sdcard/events.csv`. It completed
@@ -97,7 +101,9 @@ Local evidence from this update:
 3. Demonstrate CLI queries, admin schedule changes, adding/deleting a user, and
    the refusal to delete an occupied user.
 4. Demonstrate both room lights and off-delay, empty-building light shutdown,
-   link outage/recovery, and serial diagnostics.
+   link outage/recovery, serial diagnostics, and the new `usage` command. Verify
+   that on-time increases while a light is active and suppressed time increases
+   when the building is confirmed empty.
 5. Check the feedback LED pulses visually in Wokwi. The current feedback LED
    does not actuate a real door, and the keypad B tailgate marker is simulated
    rather than an automatic sensor.

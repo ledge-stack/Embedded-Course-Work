@@ -51,5 +51,8 @@ times.
 6. Observe the grant/deny LED pulses. Do not describe the LED as a lock or a
    buzzer.
 
-The team has selected and documented no innovation feature in this repository
-yet. Agree and record the approved feature before claiming it in the report.
+The repository's proposed innovation package is **Occupancy-Aware Safety and
+Lighting Analytics**. It combines this safety feature bundle, feedback LED
+behavior, empty-building light shutoff, room-link recovery, and a room-light
+usage report. The report gives runtime durations only, not measured kWh. The
+team should record this package as its selection in the project issue.

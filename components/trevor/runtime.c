@@ -183,8 +183,8 @@ static void room_task(void *arg) {
     tr_room_init(&room, (uint8_t)(i + 1), TR_DEFAULT_OFF_DELAY_MS);
     tr_sender sender = {0};
     tr_parser parser = {0};
+    tr_usage usage = {0};
     bool dirty = true;
-    bool previous_effective_light = false;
     uint32_t sequence = 0;
     uint64_t last_snapshot = 0;
     /* Each room task reads its PIR and controls only its own light. */
@@ -192,6 +192,8 @@ static void room_task(void *arg) {
         uint64_t now = now_ms();
         lock();
         uint32_t delay = delays[i];
+        bool count_known = building_count_known;
+        size_t inside_count = building_inside_count;
         unlock();
         if (room.off_delay_ms != delay) {
             tr_room_set_delay(&room, delay);
@@ -201,12 +203,16 @@ static void room_task(void *arg) {
             dirty = true;
             ESP_LOGI(TAG, "Room %u motion=%d light=%d", i + 1, room.occupied, room.light);
         }
+        bool effective_light = room.light && (!count_known || inside_count > 0);
+        bool empty_suppression = room.light && count_known && inside_count == 0;
+        bool light_changed = usage.started && effective_light != usage.light_was_on;
+        tr_usage_sample(&usage, now, effective_light, empty_suppression);
         lock();
-        bool effective_light = room.light && (!building_count_known || building_inside_count > 0);
+        shared.light_on_ms[i] = usage.light_on_ms;
+        shared.empty_building_saved_ms[i] = usage.empty_suppressed_ms;
         unlock();
-        if (effective_light != previous_effective_light)
+        if (light_changed)
             dirty = true;
-        previous_effective_light = effective_light;
         gpio_set_level(light_pin[i], effective_light);
         tr_message incoming;
         /* Bound processing so an input flood cannot starve local light control. */

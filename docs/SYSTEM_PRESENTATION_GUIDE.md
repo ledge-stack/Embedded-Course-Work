@@ -160,7 +160,9 @@ coursework brief explicitly requires the schedule to restrict both doors; a
 denied exit leaves the person recorded inside.
 
 Edward's UART0 CLI also supports read-only queries (`status`, `inside`,
-`rooms`, `users`, `records`, and `schedule`). Type `login 2468` to open a
+`rooms`, `usage`, `users`, `records`, and `schedule`). `usage` reports room
+light-on and empty-building-suppressed time since boot; it does not infer kWh.
+Type `login 2468` to open a
 60-second admin session, then use `open 08:00`, `close 18:00`,
 `useradd NAME UIDHEX`, or `userdel ID`. The command `confirm-empty` is permitted
 only after checking that the building is physically empty.

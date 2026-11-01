@@ -90,6 +90,14 @@ Boot counters are committed to NVS namespace `trevor_link`, key `boot`, before t
 
 This is **eventual synchronization of latest room state**, not guaranteed delivery of every intermediate transition or a durable event journal. During outages, intermediate changes can be coalesced. Access records are handed directly to the storage queue by Leon's module; remote access-event transport and schedule replication are not defined by this room protocol. Agree those extensions with the team before integration.
 
+## Light-use report
+
+Each room task tracks its effective light-on time and the time a requested
+light was suppressed because the entrance runtime confirmed the building was
+empty. Edward's serial `usage` command displays both totals in minutes and
+seconds. They reset on reboot and measure runtime only; without a configured
+lamp wattage they must not be presented as kWh or an electricity bill.
+
 ## Synchronization and storage integration
 
 `room_task` owns its room state, retry sender and ACK parser. `coordinator_task` owns both receiver streams. A priority-inheriting FreeRTOS mutex protects public snapshots, configuration and counters. Snapshot reads copy both rooms while holding that mutex. GPIO and UART operations do not hold it. A single `storage_task` consumes a 16-entry queue; no room-control task waits for SD writes. Logical transport uses an eight-frame queue per direction per room. These are task-context APIs, not ISR APIs.
@@ -109,6 +117,9 @@ These steps require a running Wokwi or physical setup. Automated Windows tests e
 5. Set switch right. Both coordinator snapshots recover and report the current state. Counters expose any retry/duplicate behavior; do not expect every intermediate disconnected transition in storage.
 6. On physical boards, disconnect each UART wire independently and repeat. In particular disconnect only coordinator TX (ACK direction), then change motion: fresh state must still arrive after retry timeout. Restart a room with NVS intact; its higher session must be accepted. Restart coordinator; the next heartbeat must restore both snapshots.
 7. Connect Edward's SD hook and repeat with a missing/full card. Confirm `storage_unwritten` increases and local lighting continues. Run concurrent entrance events and room motion. Verify actual persisted contents before marking SD integration complete.
+8. In the combined demo, run the serial `usage` command. Confirm room light-on
+   time increases while a light is active and empty-suppressed time increases
+   when the building count is known to be zero. Both values reset on reboot.
 
 ## Trevor's report contribution draft
 

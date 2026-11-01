@@ -19,6 +19,22 @@ bool tr_room_sample(tr_room *r, bool motion, uint64_t now) {
     return occupied != r->occupied || light != r->light;
 }
 
+void tr_usage_sample(tr_usage *usage, uint64_t now, bool light_on, bool light_suppressed) {
+    if (!usage)
+        return;
+    if (usage->started && now >= usage->last_update_ms) {
+        uint64_t elapsed = now - usage->last_update_ms;
+        if (usage->light_was_on)
+            usage->light_on_ms += elapsed;
+        if (usage->light_was_suppressed)
+            usage->empty_suppressed_ms += elapsed;
+    }
+    usage->last_update_ms = now;
+    usage->started = true;
+    usage->light_was_on = light_on;
+    usage->light_was_suppressed = light_suppressed;
+}
+
 static void put32(uint8_t *p, uint32_t v) {
     for (unsigned i = 0; i < 4; i++)
         p[i] = (uint8_t)(v >> (8 * i));

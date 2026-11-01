@@ -16,7 +16,8 @@ ESP32 based coursework project for a pilot covering the CoCIS main entrance and 
 Leon implemented the entrance RFID readers, access and anti-passback decisions,
 Kampala schedule, LCD, keypad, dashboard, roll-call, and roster API. Trevor's
 room sensing, automatic lights, messaging, retries, FreeRTOS synchronization,
-and serialized storage queue live under `components/trevor/`. Edward's SD event
+serialized storage queue, and light-use counters live under `components/trevor/`.
+Edward's SD event
 log, NVS user roster, and UART0 status/admin CLI live in `components/storage/`
 and `components/cli/`. Grace's scan-feedback LED is in `components/actuator/`.
 `src/main.c` starts the combined modules and supplies the entrance inside count
@@ -48,8 +49,9 @@ change hours from the keypad (press `A`, enter demo PIN `2468`, then `#`) or the
 Wi-Fi dashboard; schedule changes persist in NVS. The PIN and HTTP dashboard
 are presentation-only. Wokwi browser access to the ESP32 web server requires
 its Private IoT Gateway; with it enabled, open `http://localhost:9080/`.
-The UART0 CLI offers `help`, `status`, `inside`, `rooms`, `users`, `records`, and
-`schedule`. Use `login 2468` before `open HH:MM`, `close HH:MM`, `useradd NAME UIDHEX`,
+The UART0 CLI offers `help`, `status`, `inside`, `rooms`, `usage`, `users`,
+`records`, and `schedule`. `usage` shows light-on and empty-building-suppressed
+durations since boot (not kWh). Use `login 2468` before `open HH:MM`, `close HH:MM`, `useradd NAME UIDHEX`,
 `userdel ID`, or `confirm-empty`. Events are appended to `/sdcard/events.csv` when the
 SD card mounts; the CLI reports when it is unavailable.
 

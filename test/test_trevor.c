@@ -29,6 +29,20 @@ static void room_timing(void) {
     puts("PASS light delay, boundary, renewed motion, zero delay");
 }
 
+static void usage_accounting(void) {
+    tr_usage usage = {0};
+    tr_usage_sample(NULL, 0, false, false);
+    tr_usage_sample(&usage, 100, false, false);
+    tr_usage_sample(&usage, 350, true, false);
+    tr_usage_sample(&usage, 700, false, true);
+    tr_usage_sample(&usage, 900, false, true);
+    tr_usage_sample(&usage, 1000, true, false);
+    tr_usage_sample(&usage, 1100, false, false);
+    assert(usage.light_on_ms == 450);
+    assert(usage.empty_suppressed_ms == 300);
+    puts("PASS room light-use and empty-building time accounting");
+}
+
 static tr_message state(uint32_t boot, uint32_t seq) {
     return (tr_message){.kind = TR_STATE,
                         .room = 1,
@@ -140,6 +154,7 @@ static void delivery(void) {
 
 int main(void) {
     room_timing();
+    usage_accounting();
     protocol();
     delivery();
     puts("All Trevor core tests passed.");

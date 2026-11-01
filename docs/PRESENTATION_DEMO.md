@@ -87,7 +87,10 @@ presentation check.
 ## Edward's serial menu
 
 At the UART0 serial console type `help`. Read commands include `status`,
-`inside`, `rooms`, `users`, `records`, and `schedule`. `login 2468` grants a
+`inside`, `rooms`, `usage`, `users`, `records`, and `schedule`. The `usage`
+command compares room light-on time with requested light-on time suppressed
+while the building is confirmed empty. Values reset at reboot and are not kWh.
+`login 2468` grants a
 60-second admin session for schedule changes (`open HH:MM`, `close HH:MM`),
 roster changes (`useradd NAME UIDHEX`, `userdel ID`), and `confirm-empty`.
 User and CLI actions are implemented but still need a live Wokwi walkthrough.
