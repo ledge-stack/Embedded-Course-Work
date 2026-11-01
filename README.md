@@ -20,10 +20,12 @@ and serialized storage queue live under `components/trevor/`. Edward's SD event
 log, NVS user roster, and UART0 status/admin CLI live in `components/storage/`
 and `components/cli/`. Grace's scan-feedback LED is in `components/actuator/`.
 `src/main.c` starts the combined modules and supplies the entrance inside count
-to the room-light safety rule. The documentation index is
-[`docs/README.md`](docs/README.md); it links to the coursework status, system
-walkthrough, presentation demo, module guides, contribution drafts, and
-pin/interface contract.
+to the room-light safety rule. The [system operation report](docs/SYSTEM_OPERATION_REPORT.md)
+covers the architecture, hardware, implementation, operation, member areas,
+and verification limits. The documentation index is
+[`docs/README.md`](docs/README.md); it links to the system walkthrough,
+presentation demo, module guides, contribution drafts, and pin/interface
+contract.
 
 ## Build and simulation
 

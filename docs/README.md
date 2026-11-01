@@ -11,6 +11,9 @@ the detailed material by task.
 - [System presentation guide](SYSTEM_PRESENTATION_GUIDE.md): end-to-end system
   explanation, folder purposes, GPIO wiring, FreeRTOS tasks, queues, mutexes,
   logs, and module interactions.
+- [System operation report](SYSTEM_OPERATION_REPORT.md): coursework report with
+  architecture, hardware, operation, implementation areas, member details,
+  and verification limits.
 - [Interface and pin contract](INTERFACES.md): shared data ownership, APIs,
   access rules, GPIO assignments, and SPI/I2C/UART connections.
 - [Coursework completion plan](COURSEWORK_COMPLETION_PLAN.md): implemented
