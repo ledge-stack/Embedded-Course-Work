@@ -1,6 +1,6 @@
 # Shared interfaces and terminal pin plan
 
-Version 1, 28 October 2026. This is the working contract for the combined
+Version 1, updated 1 November 2026. This is the working contract for the combined
 single-board Wokwi presentation simulation.
 All members should review it before extending the message protocol.
 
@@ -72,7 +72,7 @@ unknown cards and exit-without-entry remain denied.
 | Keypad rows R1-R4 | 14 / 15 / 16 / 17 |
 | Keypad columns C1-C4 | 34 / 35 / 36 / 39 |
 | Keypad column pull-ups | 10 kOhm to 3.3 V, one per column |
-| microSD SPI chip-select (shared SPI bus) | 0 (10 kOhm pull-up to 3.3 V) |
+| microSD SPI chip-select (shared SPI bus) | 2 (10 kOhm pull-up to 3.3 V) |
 | UART0 | USB serial console, 115200 baud |
 
 Build the combined one-chip Wokwi demo only with `pio run -e esp32dev`

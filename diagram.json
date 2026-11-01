@@ -207,6 +207,90 @@
       []
     ],
     [
+      "entry_rfid:3.3V",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "entry_rfid:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "entry_rfid:SCK",
+      "esp:D18",
+      "blue",
+      []
+    ],
+    [
+      "entry_rfid:MOSI",
+      "esp:D23",
+      "orange",
+      []
+    ],
+    [
+      "entry_rfid:MISO",
+      "esp:D19",
+      "green",
+      []
+    ],
+    [
+      "entry_rfid:SDA",
+      "esp:D5",
+      "purple",
+      []
+    ],
+    [
+      "entry_rfid:RST",
+      "esp:D4",
+      "orange",
+      []
+    ],
+    [
+      "exit_rfid:3.3V",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "exit_rfid:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "exit_rfid:SCK",
+      "esp:D18",
+      "blue",
+      []
+    ],
+    [
+      "exit_rfid:MOSI",
+      "esp:D23",
+      "orange",
+      []
+    ],
+    [
+      "exit_rfid:MISO",
+      "esp:D19",
+      "green",
+      []
+    ],
+    [
+      "exit_rfid:SDA",
+      "esp:D13",
+      "purple",
+      []
+    ],
+    [
+      "exit_rfid:RST",
+      "esp:D4",
+      "orange",
+      []
+    ],
+    [
       "pir1:VCC",
       "esp:VIN",
       "red",
@@ -328,7 +412,7 @@
     ],
     [
       "sdcard:CS",
-      "esp:D0",
+      "esp:D2",
       "purple",
       []
     ],
@@ -370,13 +454,13 @@
     ],
     [
       "keypad:R3",
-      "esp:D16",
+      "esp:RX2",
       "blue",
       []
     ],
     [
       "keypad:R4",
-      "esp:D17",
+      "esp:TX2",
       "blue",
       []
     ],
@@ -394,13 +478,13 @@
     ],
     [
       "keypad:C3",
-      "esp:D36",
+      "esp:VP",
       "green",
       []
     ],
     [
       "keypad:C4",
-      "esp:D39",
+      "esp:VN",
       "green",
       []
     ],
@@ -430,7 +514,7 @@
     ],
     [
       "kp_pull3:1",
-      "esp:D36",
+      "esp:VP",
       "green",
       []
     ],
@@ -442,7 +526,7 @@
     ],
     [
       "kp_pull4:1",
-      "esp:D39",
+      "esp:VN",
       "green",
       []
     ],
@@ -454,7 +538,7 @@
     ],
     [
       "sd_cs_pull:1",
-      "esp:D0",
+      "esp:D2",
       "purple",
       []
     ],

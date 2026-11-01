@@ -226,7 +226,8 @@ static void entrance_task(void *arg) {
 
 static void display_task(void *arg) {
     (void)arg;
-    char rows[4][21];
+    char rows[4][21]={{0}},previous[4][21]={{0}};
+    bool first_write=true;
     while(true) {
         if(!entrance_keypad_admin_view(rows)) {
             entrance_status status;
@@ -254,8 +255,12 @@ static void display_task(void *arg) {
                 }
             }
         }
-        entrance_display_write((const char (*)[21])rows);
-        vTaskDelay(pdMS_TO_TICKS(500));
+        if(first_write||memcmp(rows,previous,sizeof(rows))!=0) {
+            entrance_display_write((const char (*)[21])rows);
+            memcpy(previous,rows,sizeof(rows));
+            first_write=false;
+        }
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 

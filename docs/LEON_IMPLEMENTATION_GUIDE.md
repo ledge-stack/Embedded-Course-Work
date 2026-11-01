@@ -17,8 +17,9 @@ presentation build without owning the same pins or state.
   UART pins overlap some entrance pins.
 - Keep the code simple: each module has one job, entrance state has one owner,
   and other modules use the entrance API instead of editing that state.
-- Leon's planned anti-passback/tailgating alerts and evacuation report are
-  specified separately in [`LEON_ENTRANCE_SAFETY_DESIGN.md`](LEON_ENTRANCE_SAFETY_DESIGN.md).
+- Leon's anti-passback alert, simulation-only tailgate marker and read-only
+  evacuation report are implemented in firmware; the safe-feedback design
+  and its limits are in [`LEON_ENTRANCE_SAFETY_DESIGN.md`](LEON_ENTRANCE_SAFETY_DESIGN.md).
 
 ## How the modules fit together
 
@@ -46,12 +47,12 @@ three physical ESP32 boards are present.
 | File or module | Keep its job this small |
 | --- | --- |
 | `components/entrance/core.c` | Decide whether a card event is valid, whether entry is in hours, and whether occupancy changes. Keep hardware and web code out of these rules. |
-| `components/entrance/mfrc522.c` | Read the two MFRC522 readers over their shared SPI bus. It should report card UIDs; it should not decide who is authorized. |
-| `components/entrance/runtime.c` | Own the live entrance state, time, event flow, and LCD refresh. It calls the core rules and publishes read-only status for other modules. |
+| `components/entrance/mfrc522.c` | Read the two MFRC522 readers over their shared SPI bus, check card replies and report UIDs. It should not decide who is authorized. |
+| `components/entrance/runtime.c` | Own the live entrance state, time, event flow, and LCD refresh. It calls the core rules and publishes read-only status for other modules. The LCD is checked every 100 ms and written only when its text changes. |
 | `components/entrance/display.c` | Draw four lines on the LCD. It should not change access decisions or the schedule. |
 | `components/entrance/keypad.c` | Read keypad keys, ask the PIN verifier to authenticate, and send accepted time changes through the schedule API. It should not write the schedule state directly. |
 | `components/entrance/dashboard.c` | Serve the admin page and status endpoints. It uses the same PIN verifier and schedule API as the keypad; it should not keep a second copy of the schedule. |
-| `components/auth/runtime.c` | Check the presentation PIN and apply the failed-login lockout. Do not put a plaintext PIN in logs or add a second login rule in the keypad or dashboard. |
+| `components/auth/runtime.c` | Check the presentation PIN with one PSA PBKDF2 derivation and apply the failed-login lockout. Do not put a plaintext PIN in logs or add a second login rule in the keypad or dashboard. |
 | `include/common/system.h` | Hold data types shared across Leon's entrance and Trevor's room integration. Agree on changes before changing the message or event format. |
 | `src/main.c` | Initialize shared NVS, start Trevor's runtime, and start Leon's runtime only for `TR_ROLE=0`. Do not move either subsystem's work into `main.c`. |
 
@@ -113,10 +114,11 @@ and #18 in `docs/IMPLEMENTATION_PLAN.md`). Keep each item demonstrable:
 
 ### Remaining work to track honestly
 
-- The current simulation reports `GRANTED` on the LCD and serial log, but the
-  diagram has no door actuator or entry/exit grant output. Add a simulated
-  actuator only after choosing unused pins and updating this guide, the diagram,
-  and firmware together. Do not take keypad or RFID bus pins for it.
+- The RFID probe detected the registered card at both readers. The full Wokwi
+  access-flow run was after the 08:00-18:00 Kampala window, so the firmware
+  correctly denied entry; a granted entry and exit still need to be shown. The
+  diagram has no door actuator or entry/exit grant output. Grace owns that
+  integration; do not assign her outputs to keypad or RFID bus pins.
 - The demo users are still the startup roster. The public handoff
   `entrance_runtime_set_users()` is ready, but registered-user management and
   the caller in Edward's store are not implemented yet.
@@ -162,7 +164,7 @@ when `TR_ROLE` is 1, 2, or 3.
 | GPIO 21, 22 | Leon LCD I2C SDA, SCL | Keep I2C access inside the display module unless another I2C device is deliberately added to the same bus. |
 | GPIO 14-17 | Leon keypad row outputs | Do not use for LEDs or UART in the combined build. |
 | GPIO 34, 35, 36, 39 | Leon keypad column inputs | These pins need the four external 10 kOhm pull-ups shown in the diagram. |
-| GPIO 0 | Reserved for the diagram's SD chip select with a 10 kOhm pull-up | SD is not driven by firmware yet. Keep the pull-up so GPIO0 remains high at boot. |
+| GPIO 2 | Reserved for the diagram's SD chip select with a 10 kOhm pull-up | SD is not driven by firmware yet. Keep the pull-up so chip select stays inactive at boot. |
 | UART0 | USB serial logs for both modules | Both modules may print to the same console. Keep log lines short; interleaved logs do not mean the modules share state. |
 
 The SPI driver serializes reader transfers. The LCD has its own I2C bus. The

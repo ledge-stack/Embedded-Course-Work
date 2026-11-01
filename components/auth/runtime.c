@@ -36,35 +36,28 @@ bool auth_runtime_verify_pin(const char *pin) {
     TickType_t now=xTaskGetTickCount();
     if((int32_t)(now-locked_until_ticks)<0) { xSemaphoreGive(auth_mutex);return false; }
     if(length==PIN_SIZE) {
-        unsigned char u[32]={0},next[32]={0},block[4]={0,0,0,1};
-        unsigned char first[sizeof(salt)+sizeof(block)];
-        memcpy(first,salt,sizeof(salt));memcpy(first+sizeof(salt),block,sizeof(block));
-        psa_key_attributes_t attributes=PSA_KEY_ATTRIBUTES_INIT;
-        psa_set_key_type(&attributes,PSA_KEY_TYPE_HMAC);
-        psa_set_key_bits(&attributes,(psa_key_bits_t)(length*8u));
-        psa_set_key_usage_flags(&attributes,PSA_KEY_USAGE_SIGN_MESSAGE);
-        psa_set_key_algorithm(&attributes,PSA_ALG_HMAC(PSA_ALG_SHA_256));
-        psa_key_id_t key=0;size_t mac_size=0;
-        if(psa_crypto_init()==PSA_SUCCESS &&
-           psa_import_key(&attributes,(const uint8_t *)pin,length,&key)==PSA_SUCCESS &&
-           psa_mac_compute(key,PSA_ALG_HMAC(PSA_ALG_SHA_256),first,sizeof(first),u,sizeof(u),&mac_size)==PSA_SUCCESS &&
-           mac_size==sizeof(u)) {
-            memcpy(derived,u,sizeof(u));
-            for(unsigned iteration=1;iteration<PIN_ITERATIONS;iteration++) {
-                if(psa_mac_compute(key,PSA_ALG_HMAC(PSA_ALG_SHA_256),u,sizeof(u),next,sizeof(next),&mac_size)!=PSA_SUCCESS ||
-                   mac_size!=sizeof(u)) { memset(derived,0,sizeof(derived));break; }
-                memcpy(u,next,sizeof(u));
-                for(size_t i=0;i<sizeof(derived);i++)derived[i]^=u[i];
-            }
+        psa_key_derivation_operation_t operation=PSA_KEY_DERIVATION_OPERATION_INIT;
+        psa_status_t status=psa_crypto_init();
+        if(status==PSA_SUCCESS)
+            status=psa_key_derivation_setup(&operation,PSA_ALG_PBKDF2_HMAC(PSA_ALG_SHA_256));
+        /* PSA requires the PBKDF2 cost, salt, then password inputs. */
+        if(status==PSA_SUCCESS)
+            status=psa_key_derivation_input_integer(&operation,PSA_KEY_DERIVATION_INPUT_COST,
+                PIN_ITERATIONS);
+        if(status==PSA_SUCCESS)
+            status=psa_key_derivation_input_bytes(&operation,PSA_KEY_DERIVATION_INPUT_SALT,
+                salt,sizeof(salt));
+        if(status==PSA_SUCCESS)
+            status=psa_key_derivation_input_bytes(&operation,PSA_KEY_DERIVATION_INPUT_PASSWORD,
+                (const uint8_t *)pin,length);
+        if(status==PSA_SUCCESS)
+            status=psa_key_derivation_output_bytes(&operation,derived,sizeof(derived));
+        psa_key_derivation_abort(&operation);
+        if(status==PSA_SUCCESS) {
             unsigned char diff=0;
             for(size_t i=0;i<sizeof(derived);i++) diff|=(unsigned char)(derived[i]^verifier[i]);
             matches=diff==0;
         }
-        if(key)psa_destroy_key(key);
-        psa_reset_key_attributes(&attributes);
-        mbedtls_platform_zeroize(u,sizeof(u));
-        mbedtls_platform_zeroize(next,sizeof(next));
-        mbedtls_platform_zeroize(first,sizeof(first));
     }
     if(matches) failures=0;
     else if(++failures>=5) {

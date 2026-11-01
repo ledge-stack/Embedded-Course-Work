@@ -95,15 +95,18 @@ static void handle_key(char key) {
         else if(key=='#') {
             char pin[sizeof(input)];snprintf(pin,sizeof(pin),"%s",input);
             input_size=0;input[0]=0;
+            mode=UI_MESSAGE;
+            screen_set("CHECKING PIN","Please wait","","");
             xSemaphoreGive(ui_mutex);
             bool ok=auth_runtime_verify_pin(pin);
             memset(pin,0,sizeof(pin));
+            int64_t checked_at=esp_timer_get_time()/1000;
             xSemaphoreTake(ui_mutex,portMAX_DELAY);
             if(ok) {
-                mode=UI_MENU;session_until=now+60000;
+                mode=UI_MENU;session_until=checked_at+60000;
                 screen_set("ADMIN AUTHORIZED","1 Set OPEN time","2 Set CLOSE time","D Logout");
             } else {
-                mode=UI_MESSAGE;message_until=now+2000;
+                mode=UI_MESSAGE;message_until=checked_at+2000;
                 screen_set("ACCESS DENIED","Bad PIN / locked","Wait, then try again","");
             }
             xSemaphoreGive(ui_mutex);return;
@@ -132,7 +135,8 @@ static void handle_key(char key) {
                 xSemaphoreGive(ui_mutex);return;
             }
             char digits[5];memcpy(digits,input,5);
-            enum ui_mode target=mode;mode=UI_MENU;input_size=0;input[0]=0;
+            enum ui_mode target=mode;mode=UI_MESSAGE;input_size=0;input[0]=0;
+            screen_set("CHECKING TIME","Please wait","","");
             session_until=now+60000;
             xSemaphoreGive(ui_mutex);
             entrance_status s;

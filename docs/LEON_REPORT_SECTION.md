@@ -1,6 +1,6 @@
 # Leon Nsitta: Entrance terminal and access schedule
 
-**Draft date:** 31 October 2026
+**Draft date:** 1 November 2026
 
 ## What this part does
 
@@ -46,15 +46,23 @@ to replace a person who is recorded inside.
 
 Grace's actuator and buzzer module is not in this checkout. The LCD and serial
 log report access outcomes, but this draft does not claim that a door moves or
-that a buzzer sounds. The shared Wokwi project has not been published or run,
-so there is no verified simulator URL or end-to-end result to report.
+that a buzzer sounds. The project is not published, so there is no verified
+simulator URL. A Wokwi CLI reader probe detected the registered green card at
+both readers. The entry-flow run happened after the configured 08:00-18:00
+Kampala window, so the card was correctly denied. A granted
+entry-and-exit run is still needed.
 
 ## Verification to attach before submission
 
-- **Build:** clean PlatformIO builds for `esp32dev`, `coordinator`, `room1`,
-  and `room2` passed on 31 October 2026.
-- **Wokwi:** pending. Add the public project URL and results only after opening
-  and running the shared project.
+- **Build:** all four PlatformIO environments (`esp32dev`, `coordinator`,
+  `room1`, and `room2`) passed on 31 October 2026 after the PIN-verifier fix.
+  The three separate role builds show a 2 MB versus 4 MB flash-size warning.
+- **Wokwi reader probe:** passed for both readers; green UID `11:22:33:44` was
+  detected. This does not demonstrate a granted access event.
+- **Wokwi access flow:** pending a granted entry and exit during open hours.
+  Add the public project URL only after the shared project is published.
+- **PIN authentication:** the PBKDF2 input-order correction builds, but its
+  successful `2468` keypad login has not yet been checked in Wokwi.
 - **Host test:** the entrance-core test passed on 31 October for entry,
   anti-passback, exit after closing, invalid exit, closed hours, and unavailable
   clock. It does not test Wokwi hardware behavior or the roll-call task.

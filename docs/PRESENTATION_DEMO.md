@@ -41,10 +41,13 @@ and are not yet connected. Feature limits are in
 
 ## Change the schedule at the terminal
 
-1. Press `A`, enter demo PIN `2468`, then press `#`.
+1. Press `A`, enter demo PIN `2468`, then press `#`. The LCD shows
+   `CHECKING PIN` during verification, then displays the admin menu if the PIN
+   is accepted.
 2. Press `1` to set opening time or `2` to set closing time.
 3. Enter four digits in `HHMM` format and press `#`. `*` clears the entry;
-   `D` cancels or logs out. The schedule is saved in ESP32 NVS.
+   `D` cancels or logs out. The LCD shows `CHECKING TIME` while it validates
+   and saves the new time in ESP32 NVS.
 
 ## Change the schedule over Wi-Fi
 
