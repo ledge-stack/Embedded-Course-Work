@@ -17,8 +17,9 @@ presentation build without owning the same pins or state.
   UART pins overlap some entrance pins.
 - Keep the code simple: each module has one job, entrance state has one owner,
   and other modules use the entrance API instead of editing that state.
-- Leon's planned anti-passback/tailgating alerts and evacuation report are
-  specified separately in [`LEON_ENTRANCE_SAFETY_DESIGN.md`](LEON_ENTRANCE_SAFETY_DESIGN.md).
+- Leon's anti-passback alert, simulation-only tailgate marker and read-only
+  evacuation report are implemented in firmware; the safe-feedback design
+  and its limits are in [`LEON_ENTRANCE_SAFETY_DESIGN.md`](LEON_ENTRANCE_SAFETY_DESIGN.md).
 
 ## How the modules fit together
 
@@ -46,12 +47,12 @@ three physical ESP32 boards are present.
 | File or module | Keep its job this small |
 | --- | --- |
 | `components/entrance/core.c` | Decide whether a card event is valid, whether entry is in hours, and whether occupancy changes. Keep hardware and web code out of these rules. |
-| `components/entrance/mfrc522.c` | Read the two MFRC522 readers over their shared SPI bus. It should report card UIDs; it should not decide who is authorized. |
-| `components/entrance/runtime.c` | Own the live entrance state, time, event flow, and LCD refresh. It calls the core rules and publishes read-only status for other modules. |
+| `components/entrance/mfrc522.c` | Read the two MFRC522 readers over their shared SPI bus, check card replies and report UIDs. It should not decide who is authorized. |
+| `components/entrance/runtime.c` | Own the live entrance state, time, event flow, and LCD refresh. It calls the core rules and publishes read-only status for other modules. The LCD is checked every 100 ms and written only when its text changes. |
 | `components/entrance/display.c` | Draw four lines on the LCD. It should not change access decisions or the schedule. |
 | `components/entrance/keypad.c` | Read keypad keys, ask the PIN verifier to authenticate, and send accepted time changes through the schedule API. It should not write the schedule state directly. |
 | `components/entrance/dashboard.c` | Serve the admin page and status endpoints. It uses the same PIN verifier and schedule API as the keypad; it should not keep a second copy of the schedule. |
-| `components/auth/runtime.c` | Check the presentation PIN and apply the failed-login lockout. Do not put a plaintext PIN in logs or add a second login rule in the keypad or dashboard. |
+| `components/auth/runtime.c` | Check the presentation PIN with one PSA PBKDF2 derivation and apply the failed-login lockout. Do not put a plaintext PIN in logs or add a second login rule in the keypad or dashboard. |
 | `include/common/system.h` | Hold data types shared across Leon's entrance and Trevor's room integration. Agree on changes before changing the message or event format. |
 | `src/main.c` | Initialize shared NVS, start Trevor's runtime, and start Leon's runtime only for `TR_ROLE=0`. Do not move either subsystem's work into `main.c`. |
 
@@ -68,10 +69,10 @@ command interfaces that use those APIs.
 
 | Edward's assignment | Where it fits | Keep this boundary |
 | --- | --- | --- |
-| Save access, room and lighting events to SD | Implement the storage hook in `components/storage/`; Trevor's storage task calls `tr_storage_append()`. | Do not write to the SD card from RFID, room, keypad, dashboard or CLI tasks. Keep one SD writer and report missing/full-card errors through the existing counters. |
-| Manage registered users | Replace the two fixed demo users with a persistent user source, working with Leon on the entrance public API. Edward loads a 32-slot roster and calls `entrance_runtime_set_users()`. | Array indexes are stable user IDs. The entrance runtime remains the only owner of the live inside list and rejects a roster update that removes or replaces a person still inside. |
-| Add serial status and record commands | Implement the command layer in `components/cli/`. Read entrance and room status through their public APIs. | Use the existing USB serial console (UART0); do not install a second UART0 driver. Trevor uses UART1/2 only in separate physical-role builds. |
-| Require admin login for serial changes | Extend or replace the presentation verifier through the shared `components/auth/` API. The keypad and Wi-Fi page already call this verifier. | There must be one admin credential and lockout policy for all three interfaces. Do not add a second PIN check in the CLI. |
+| Save access, room and lighting events to SD | `components/storage/` implements the writer called by Trevor's storage task through `tr_storage_append()`. | Do not write to the SD card from RFID, room, keypad, dashboard or CLI tasks. Keep one SD writer and report missing/full-card errors through the existing counters. |
+| Manage registered users | Edward's storage runtime loads and saves the roster, then calls `entrance_runtime_set_users()`. | Array indexes are stable user IDs. The entrance runtime remains the only owner of the live inside list and rejects a roster update that removes or replaces a person still inside. |
+| Add serial status and record commands | The command layer is implemented in `components/cli/`. It reads entrance and room status through their public APIs. | Use the existing USB serial console (UART0); do not install a second UART0 driver. Trevor uses UART1/2 only in separate physical-role builds. |
+| Require admin login for serial changes | The CLI uses the shared `components/auth/` verifier also used by the keypad and Wi-Fi page. | Keep one demo credential and lockout policy for all three interfaces; do not add a second PIN check in the CLI. |
 | Persist schedule and other settings | The schedule API currently saves hours to NVS namespace `access_cfg`. Coordinate with Leon before moving persistence to SD. | Keep one authoritative schedule and one write API. Do not add a second schedule copy to the CLI, SD layer, keypad or dashboard. |
 | Choose an innovation feature | Agree it with the team and record it before claiming it in the report. | Existing anti-passback is implemented by Leon, but the team has not recorded it as the approved innovation. |
 
@@ -100,8 +101,9 @@ and #18 in `docs/IMPLEMENTATION_PLAN.md`). Keep each item demonstrable:
 4. **Occupancy:** allow a valid entry once, reject a second entry while that
    user is inside, allow their exit, and reject an exit when they are not inside.
 5. **Hours and clock:** use Kampala local time from SNTP. Deny new entry if time
-   is unknown or the schedule is closed. A person already inside can still
-   leave after closing. Show people still inside in the close-time log.
+   is unknown or the schedule is closed. The same schedule blocks exits after
+   closing; show the denied scan and unchanged inside count. Show people still
+   inside in the close-time log.
 6. **Admin schedule changes:** demonstrate keypad and Wi-Fi changes, validation
    of opening/closing times, lockout after repeated wrong PINs, and persistence
    after reboot. Both interfaces must call the same schedule API.
@@ -113,25 +115,27 @@ and #18 in `docs/IMPLEMENTATION_PLAN.md`). Keep each item demonstrable:
 
 ### Remaining work to track honestly
 
-- The current simulation reports `GRANTED` on the LCD and serial log, but the
-  diagram has no door actuator or entry/exit grant output. Add a simulated
-  actuator only after choosing unused pins and updating this guide, the diagram,
-  and firmware together. Do not take keypad or RFID bus pins for it.
-- The demo users are still the startup roster. The public handoff
-  `entrance_runtime_set_users()` is ready, but registered-user management and
-  the caller in Edward's store are not implemented yet.
-- Access events enter Trevor's shared storage queue, but the weak storage hook
-  reports unavailable. The diagram's SD card is not mounted or written.
-- The serial command interface and production admin setup remain integration
-  work. The `2468` PIN and HTTP page are for presentation only.
+- The earlier RFID probe detected the registered card at both readers. The
+  earlier full Wokwi access flow ran after the 08:00-18:00 window and denied
+  entry. A later Wokwi scenario passed a granted entry and exit and confirmed
+  SD event writes.
+- Grace's scan-feedback LED is integrated on GPIO12. It signals grant/deny with
+  different pulse durations; it is not a door actuator.
+- Edward's serial roster manager calls `entrance_runtime_set_users()` and saves
+  the roster on SD with an NVS backup. Access and room events use the SD event
+  writer; roster editing and CLI commands still need interactive Wokwi checks.
+- The UART0 CLI provides queries and authenticated schedule/user operations.
+  The `2468` PIN and HTTP page remain presentation-only authentication.
+- Occupancy is volatile across reboot. The firmware marks it uncertain until
+  an administrator confirms the building is empty after a physical check.
 - The team still needs to agree and record the innovation feature, publish and
   run the Wokwi project, and complete the report/video/submission steps. The
   anti-passback behavior exists, but do not label it the team's approved
   innovation until the team records that decision.
 - Keypad `B` marks a simulated tailgate and keypad `C` prints a read-only
   evacuation roll-call to the serial monitor. Schedule close prints the same
-  report as an after-hours alert. Grace's buzzer/door module and Wokwi wiring
-  are not integrated yet; do not claim those outputs work.
+  report as an after-hours alert. Grace's blue LED indicates scan results; no
+  door lock or buzzer is installed.
 
 ## One-chip rules that prevent interference
 
@@ -157,12 +161,12 @@ when `TR_ROLE` is 1, 2, or 3.
 | GPIO 27, 26 | Trevor Room 1 PIR, light | Leave to Trevor. |
 | GPIO 33, 25 | Trevor Room 2 PIR, light | Leave to Trevor. |
 | GPIO 32 | Trevor logical-link switch | Leave to Trevor. |
-| GPIO 18, 23, 19 | Leon's MFRC522 shared SPI2 bus: SCK, MOSI, MISO | Keep both readers on this bus with separate CS pins. A future SD driver must add a device to this bus, not initialize a second bus. SD support is not implemented yet. |
+| GPIO 18, 23, 19 | Shared SD/MFRC522 SPI2 bus: SCK, MOSI, MISO | SD initializes the 4096-byte shared bus first; each MFRC522 is added as a separate SPI device. |
 | GPIO 5, 13; GPIO 4 | Leon entry CS, exit CS; shared reader reset | Keep the two chip selects separate. |
 | GPIO 21, 22 | Leon LCD I2C SDA, SCL | Keep I2C access inside the display module unless another I2C device is deliberately added to the same bus. |
 | GPIO 14-17 | Leon keypad row outputs | Do not use for LEDs or UART in the combined build. |
 | GPIO 34, 35, 36, 39 | Leon keypad column inputs | These pins need the four external 10 kOhm pull-ups shown in the diagram. |
-| GPIO 0 | Reserved for the diagram's SD chip select with a 10 kOhm pull-up | SD is not driven by firmware yet. Keep the pull-up so GPIO0 remains high at boot. |
+| GPIO 2 | Edward's SD chip select with a 10 kOhm pull-up | Keep the pull-up so chip select stays inactive at boot; storage initializes the shared SPI bus. |
 | UART0 | USB serial logs for both modules | Both modules may print to the same console. Keep log lines short; interleaved logs do not mean the modules share state. |
 
 The SPI driver serializes reader transfers. The LCD has its own I2C bus. The

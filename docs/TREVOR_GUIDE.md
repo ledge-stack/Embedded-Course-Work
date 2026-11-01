@@ -4,7 +4,13 @@ Scope: Kato Trevor — lecture room terminals, inter-terminal communication and 
 
 ## Build and run
 
-From this repository in PowerShell:
+From this repository on Fedora or another shell with PlatformIO installed:
+
+```sh
+pio run -e esp32dev
+```
+
+From PowerShell on Windows:
 
 ```powershell
 & "$env:USERPROFILE\.platformio\penv\Scripts\pio.exe" run -e esp32dev
@@ -37,7 +43,7 @@ The commented COM ports are examples. `wokwi.toml` intentionally keeps the demo 
 | Each physical room | UART1 TX / RX | 17 / 16 |
 | Demo only | Link switch common | 32 |
 
-For room 1 connect coordinator 17 → room 1 GPIO16, room 1 GPIO17 → coordinator 16. For room 2 connect coordinator 19 → room 2 GPIO16, room 2 GPIO17 → coordinator 18. Connect all grounds. Each UART is point-to-point; never tie the two room TX outputs together. UART settings: 115200, 8 data bits, no parity, 1 stop bit, no hardware flow control. UART0 stays available for Edward's console. GPIO18/19 are often used for SPI, so Edward must coordinate SD pin assignments before integration.
+For room 1 connect coordinator 17 → room 1 GPIO16, room 1 GPIO17 → coordinator 16. For room 2 connect coordinator 19 → room 2 GPIO16, room 2 GPIO17 → coordinator 18. Connect all grounds. Each UART is point-to-point; never tie the two room TX outputs together. UART settings: 115200, 8 data bits, no parity, 1 stop bit, no hardware flow control. UART0 stays available for Edward's console. In the combined Wokwi build, GPIO18/19 are SPI wires shared by RFID and SD; the separate coordinator role uses UART2 on GPIO18/19 and does not mount an SD card.
 
 Use 3.3 V compatible signal levels. LEDs demonstrate light outputs; actual room loads require appropriately rated driver/relay hardware. PIR supply depends on the chosen module; verify its output level before connecting it to the ESP32. The Wokwi sensor uses VIN for VCC, ground for GND, and OUT to the listed input.
 
@@ -88,7 +94,7 @@ This is **eventual synchronization of latest room state**, not guaranteed delive
 
 `room_task` owns its room state, retry sender and ACK parser. `coordinator_task` owns both receiver streams. A priority-inheriting FreeRTOS mutex protects public snapshots, configuration and counters. Snapshot reads copy both rooms while holding that mutex. GPIO and UART operations do not hold it. A single `storage_task` consumes a 16-entry queue; no room-control task waits for SD writes. Logical transport uses an eight-frame queue per direction per room. These are task-context APIs, not ISR APIs.
 
-Edward supplies a strong definition of `tr_storage_append(const tr_storage_event *)`, declared in `include/trevor/runtime.h`. It is called by exactly one task and returns true only on successful persistence. The weak default returns false. `storage_unwritten` counts failed/unavailable writes. `storage_queue_drop` counts rejected queue admissions. These counters reset on reboot; records are not retained for retry after a failed callback. Do not claim SD persistence until Edward's implementation is connected. All other SD reads/configuration writes must share the same storage owner (or Edward must provide his own lock around every SD operation); the hook alone cannot protect unrelated direct filesystem calls.
+Edward's `components/storage/runtime.c` provides the strong `tr_storage_append(const tr_storage_event *)` implementation for the combined demo. Exactly one Trevor task invokes it; successful return means the event was flushed to the SD file. `storage_unwritten` counts failed/unavailable writes. `storage_queue_drop` counts rejected queue admissions. These counters reset on reboot; failed events are not retained for retry. Edward's CLI record reads and roster writes use the same filesystem mutex. The entry/exit scenario verified SD event writes; roster persistence, full-card handling and recovery still need Wokwi checks.
 
 Leon can enqueue up to 48 bytes of an access event through `tr_runtime_record_access(data, length)`. A true return means queued, not durably stored. On false, the caller must retry or report loss. The concurrency test launches two independent producers, deliberately fills the queue, retries rejected admissions and checks that all 200 records reach a non-overlapping storage callback. It also injects a callback failure and checks the diagnostic counter. Building-wide occupancy and schedule ownership remain with Leon; this module does not create competing versions of that shared state.
 

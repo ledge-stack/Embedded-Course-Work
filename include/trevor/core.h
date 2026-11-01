@@ -31,7 +31,10 @@ typedef struct {
 } tr_message;
 bool tr_encode(const tr_message *message, uint8_t frame[TR_FRAME_SIZE]);
 bool tr_decode(const uint8_t frame[TR_FRAME_SIZE], tr_message *message);
-typedef struct { uint8_t bytes[TR_FRAME_SIZE]; size_t used; } tr_parser;
+typedef struct {
+    uint8_t bytes[TR_FRAME_SIZE];
+    size_t used;
+} tr_parser;
 bool tr_parser_push(tr_parser *parser, uint8_t byte, tr_message *message);
 
 typedef struct {
@@ -46,7 +49,12 @@ bool tr_sender_poll(tr_sender *sender, uint64_t now_ms, tr_message *message);
 bool tr_sender_ack(tr_sender *sender, const tr_message *message);
 
 enum tr_result { TR_INVALID, TR_NEW, TR_DUPLICATE, TR_STALE };
-typedef struct { bool valid; tr_message state; uint64_t last_seen_ms; } tr_receiver;
-enum tr_result tr_receiver_accept(tr_receiver *receiver, const tr_message *message, uint64_t now_ms);
+typedef struct {
+    bool valid;
+    tr_message state;
+    uint64_t last_seen_ms;
+} tr_receiver;
+enum tr_result tr_receiver_accept(tr_receiver *receiver, const tr_message *message,
+                                  uint64_t now_ms);
 bool tr_receiver_online(const tr_receiver *receiver, uint64_t now_ms);
 #endif

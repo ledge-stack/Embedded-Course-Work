@@ -1,3 +1,2 @@
-# Storage API boundary. Trevor currently provides the serialized queue and
-# weak persistence hook until Edward supplies the SD-card implementation.
-idf_component_register(INCLUDE_DIRS "../../include" REQUIRES common trevor)
+idf_component_register(SRCS "runtime.c" INCLUDE_DIRS "../../include"
+    REQUIRES common trevor esp_driver_gpio esp_driver_spi fatfs sdmmc nvs_flash)

@@ -1,0 +1,5 @@
+name: CoCIS boot check
+version: 1
+steps:
+  - wait-serial: "entrance ready;"
+  - wait-serial: "SNTP synchronized;"

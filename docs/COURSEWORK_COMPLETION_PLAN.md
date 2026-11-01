@@ -1,101 +1,113 @@
-# Coursework implementation status and completion plan
+# Coursework implementation and completion plan
 
-**Status date:** 31 October 2026
-**Submission target recorded in the project plan:** 2 November 2026
-**Purpose:** Record what is in the repository now, what remains to finish the coursework, and a proposed work split for the new member, Ahurira Grace.
+**Status date:** 1 November 2026
 
-The coursework plan says Wokwi simulation and PlatformIO builds are the required demonstration. Label every result as a Wokwi run, host test, or build; physical hardware is not required for the planned submission. PR #23, which added the roll-call and roster handoff, has merged into `main`. A clean build of all four environments passed on 31 October; the integrated Wokwi scenarios still need to run. The current local `sdkconfig.esp32dev` has an uncommitted ESP-IDF 6.1.0 update and triggers a 4 MB versus 2 MB flash-size warning; it is not included in Leon's code changes.
+**Submission date in the original plan:** 2 November 2026
 
-## Current implementation
+This document records the current code by member and separates build evidence
+from simulation evidence. Folder ownership is also listed in
+[`COMPONENT_OWNERSHIP.md`](COMPONENT_OWNERSHIP.md).
 
-| Area | Implemented in the repository | Still required for coursework completion |
-| --- | --- | --- |
-| Entrance and access rules | Two MFRC522 readers; demo-user UID allowlist; entry/exit decisions; inside list/count; anti-passback and duplicate/stale event rejection; Kampala schedule with SNTP; entry denied if time is unavailable or the schedule is closed; an authorized person already inside can exit after closing. | Edward still needs to supply the persistent user source and call Leon's roster API. Grace's simulated door outputs remain separate. Demonstrate schedule boundaries and failure behavior in Wokwi. |
-| Entrance operator interface | LCD status, keypad schedule changes, PIN verification with lockout, authenticated Wi-Fi status/schedule dashboard, and NVS schedule persistence. | The PIN/dashboard are presentation-only. Do not describe them as production-grade authentication. Demonstrate keypad and dashboard flows after final integration. |
-| Lecture rooms | Two PIR inputs and light outputs; immediate light-on on motion; configurable off-delay; room state protocol with CRC, sequence/session checks, acknowledgements, retries, stale/offline detection, and reconnect snapshots. | PIR detects motion, not continuous occupancy or people count. Confirm the brief accepts this approximation or document/implement a presence sensor. Run the room scenarios in the final demo. Remote schedule/building-count replication and remote room-delay configuration are not implemented. |
-| Synchronization and storage boundary | FreeRTOS task ownership, queues, a mutex-protected snapshot, bounded message queues, a serialized storage consumer, access-event enqueue API, and diagnostics for queue drops and unavailable writes. | The default SD callback reports failure. Queueing an event does not mean it was saved. Implement and verify SD writes, read/configuration ownership, missing/full-card handling, and persistence across reboot. |
-| Communications | Trevor's room protocol and `coordinator`, `room1`, and `room2` firmware roles exist. The default `esp32dev` presentation build runs one ESP32 with two logical rooms and a simulated link switch. | Demonstrate link loss and recovery with the Wokwi switch, check each room role's restart behavior with a host test or separate build/run, and save evidence. The one-board Wokwi demo is not three physical terminals. Access-event transport between terminals is not implemented. |
-| Circuit and build | `diagram.json` contains a one-board demo with the ESP32, two room PIR/light pairs, link switch, two RFID readers, LCD, keypad, and an SD-card part. PlatformIO has `esp32dev`, `coordinator`, `room1`, and `room2` environments. All four environments built cleanly on 31 October. | The SD part is not driven by firmware and the new actuator outputs are not yet in the diagram. Publish/open the shared Wokwi project and record its URL; run the final demo. The builds warn that SDK flash size is 2 MB while the selected board specifies 4 MB; resolve the config with the team. |
-| Tests and evidence | A portable Leon entrance-core test passes for access, anti-passback, safe exit, schedule, and clock rules. Trevor's portable core tests and host adapter tests are also present. | The integrated Wokwi scenarios still need to run. Add evidence for SD, CLI, actuator, safety, and end-to-end behavior after the missing modules arrive. Keep host tests, simulator results, and physical hardware results clearly distinguished. |
-| Report and presentation | Project README, implementation guides, interface notes, and presentation outline exist. | Finish the operation report, all member contribution statements, video walkthroughs, final presentation, shared simulator link, and submission package. Confirm the submission portal and required format with the course team. |
+## Implemented by member
 
-## Work remaining by member
+### Leon Nsitta — entrance and integration
 
-### Leon Nsitta — entrance owner and integration coordinator
+- Two RFID readers, known-user checks, entry/exit decisions, anti-passback,
+  inside list/count, and schedule checks at both doors.
+- Kampala SNTP clock, schedule persistence, LCD, keypad, Wi-Fi dashboard,
+  evacuation roll-call, after-hours alert, and access-event handoff.
+- `entrance_runtime_set_users()` accepts Edward's saved roster without allowing
+  an occupied person's identity to be replaced or removed.
+- `src/main.c` connects Leon's authoritative inside count to Trevor's rooms.
 
-**Already implemented:** Entrance RFID and decision logic, occupancy/anti-passback, access schedule and clock handling, LCD, keypad, Wi-Fi dashboard, schedule persistence, shared system types, combined demo startup, pin map, and one-board circuit.
+### Kato Trevor — room control and communication
 
-**Implemented in this update:**
+- Two PIR/light channels, immediate on behavior, configurable off-delay, room
+  state snapshots, CRC and sequence checking, acknowledgements, retries,
+  duplicate/stale checks, link state and diagnostic counters.
+- FreeRTOS room/coordinator/storage tasks, bounded queues, a mutex-protected
+  snapshot and a single serialized event-storage worker.
+- In the one-board presentation build, room lights are forced off when Leon's
+  known inside count is zero. Unknown count does not mean empty.
 
-- Keypad `C` prints a read-only evacuation roll-call to serial.
-- The schedule watcher prints the same report as an after-hours alert when people remain inside at closing.
-- Anti-passback and exit-without-entry denials now get explicit alert labels in the serial log; the LCD shows an after-hours still-inside alert.
-- Keypad `B` marks a simulation-only tailgate and changes the display to show occupancy uncertainty. It does not add a person or claim automatic detection.
-- `entrance_runtime_set_users()` is the roster handoff for Edward's user store. It checks UIDs and preserves the identity of anyone currently recorded inside. Edward's store is not present yet, so the demo roster remains active at startup.
-- All four PlatformIO environments build from this branch.
+### Kagimu Edward — storage and serial administration
 
-**Still to finish:**
+- Shared SPI2 bus initialization for the RFID readers and microSD card.
+- SD mount attempt and append-only CSV event log at `/sdcard/events.csv` for
+  access and room events. Missing-card or write failures are counted and do not
+  stop local room control.
+- Registered-user roster saved to SD with an NVS backup and loaded at startup.
+- UART0 commands: `help`, `status`, `inside`, `rooms`, `users`, `records`,
+  `schedule`, `login PIN`, and `logout`. A 60-second admin session is required
+  for `open HH:MM`, `close HH:MM`, `useradd NAME UIDHEX`, and `userdel ID`.
+- User updates go through Leon's validation API. A user who is inside cannot
+  be removed. The coursework demo PIN is `2468` and is not production security.
 
-1. Integrate `entrance_actuator_signal()` calls after every access decision when Grace's actuator module is available. Her module is not in this checkout yet; do not replace it with a Leon-owned actuator implementation.
-2. Integrate Edward's persistent roster at startup and after user changes by calling `entrance_runtime_set_users()`. His user-store module is not in this checkout yet.
-3. Keep the existing schedule API available for Edward's authenticated commands. `entrance_runtime_set_schedule()` already validates and persists hours; his command handler must authenticate before calling it.
-4. Publish/open the shared Wokwi project and add its URL to the README. Interactive Wokwi behavior remains unverified; no browser or Wokwi CLI is available in this environment.
-5. Run the full integrated acceptance scenarios after Grace's and Edward's modules arrive. The report section draft is in [`LEON_REPORT_SECTION.md`](LEON_REPORT_SECTION.md); add the Wokwi URL and observed evidence after the run.
+### Ahurira Grace — entrance feedback
 
-### Kato Trevor — room terminals and communications
+- A blue Wokwi LED gives a short pulse after an allowed scan and a longer pulse
+  after a denied scan. It is a visual feedback signal, not a door lock or a
+  physical actuator.
+- GPIO12 is used because it is the remaining output in the combined circuit.
+  This pin is an ESP32 boot-strapping pin; the diagram now includes an external
+  10 kOhm pulldown. The final Wokwi scenario booted successfully; physical
+  hardware behavior still needs a board-level check.
 
-**Already implemented:** Room motion/off-delay logic; room state frame format and CRC; parser recovery; session/sequence validation; acknowledgement/retry/heartbeat behavior; coordinator snapshots and offline state; physical UART role builds; task/queue/mutex ownership; serialized storage queue and access-event enqueue interface; host tests.
+## Combined diagram and pin assignments
 
-**To finish:**
+`diagram.json` is one ESP32 with two logical rooms, two RFID readers, an LCD,
+keypad, slide switch, SD card and feedback LED. The other PlatformIO roles are
+separate firmware builds; this diagram does not contain three physical ESP32s.
+The detailed GPIO map is in [`INTERFACES.md`](INTERFACES.md).
 
-1. Demonstrate both room lights, simultaneous room activity, renewed motion before timeout, and the configured off-delay in the final demo.
-2. Demonstrate link loss/recovery with the Wokwi switch and check each role's restart behavior in a host test or separate role run. Save the results. Do not describe the logical one-board Wokwi queues as three physical terminals.
-3. Coordinate any needed access-event or authoritative occupancy/schedule messages with Leon and Edward. The current room protocol does not carry these; agree message fields/versioning before extending it.
-4. Decide and implement Trevor's approved innovation feature if the assignment requires one per member; record the team's choice before calling it complete.
-5. Review the storage callback integration with Edward and verify that room control remains responsive when the SD card is missing, full, or slow.
+The RFID readers and SD card share SCK/MOSI/MISO GPIO 18/23/19. They have CS
+GPIOs 5/13/2. The firmware initializes the bus for SD block-sized transfers
+before attaching both RFID readers. The SD part has a Wokwi folder configured
+in `wokwi.toml`.
 
-### Kagimu Edward — persistent storage, users, and serial administration
+## Verification status
 
-**Already available to integrate:** Trevor's single-consumer storage callback and bounded queue; Leon's compact access event payload and schedule API; a demo PIN verifier for the presentation keypad/dashboard. These are interfaces, not Edward's completed persistence or serial-admin features.
+Local evidence from this update:
 
-**To implement:**
+- All four PlatformIO environments passed after the both-door schedule rule
+  was added; the three auxiliary SDK configs match the board's 4 MB flash size.
+- The portable entrance test passed for schedule enforcement at entry and exit,
+  denied exit with unchanged occupancy, anti-passback, invalid exit and clock
+  failure. Trevor's portable core suite also passed.
+- On 1 November, the Wokwi RFID scenario mounted the SD card, granted the
+  green demo card's entry and exit during open hours, returned occupancy to
+  zero, and wrote both access records into `sdcard/events.csv`. It completed
+  successfully with the final GPIO12 pulldown wiring in the diagram.
+- The expanded `presentation-smoke.yaml` scenario adds repeat-entry and
+  unknown-card assertions. A 1 November CLI attempt connected to the Wokwi
+  simulation API, then the transport closed with WebSocket code 1006 before
+  serial assertions completed. Treat the earlier entry/exit scenario as the
+  confirmed Wokwi evidence; the expanded checks remain unverified.
+- Roster management, serial CLI actions, empty-building light shutdown, visual
+  LED feedback, SD-full/recovery and reboot scenarios are not yet demonstrated.
 
-1. Implement the SD component and provide the strong `tr_storage_append(const tr_storage_event *)` callback. Persist access, room/light, and required system events. Define a stable record format with timestamps and document it.
-2. Make SD access single-owner/serialized, including reads and configuration writes. Handle card absent, mount failure, full card, write failure, and recovery without crashing or blocking local room control. Surface failures in status/diagnostics and verify actual files and reboot persistence.
-3. Replace the fixed demo-user allowlist with the agreed registered-user source and add supported user-management operations through APIs; Leon's entrance runtime remains owner of live occupancy.
-4. Implement the UART0 serial help/status/read menu for people inside/count, room status/lights, access records, system health, and schedule.
-5. Implement authenticated admin sessions for user/schedule changes, including verifier storage (not plaintext credentials), failed-login recording, a retry limit/lockout, logout or session expiry, and authorization checks at the command boundary. Coordinate schedule mutation with Leon's API rather than editing entrance state directly.
-6. Demonstrate concurrent event producers and missing/full-card behavior; verify no overlapping writes, silent event loss, or room-control stalls.
+## Still required before submission
 
-### Ahurira Grace — entrance hardware and feedback owner
+1. Run the Wokwi circuit to check schedule denial at both doors (including a
+   person already inside), clock-unavailable denial, roster persistence,
+   authenticated CLI actions, empty-building light shutdown, and the feedback
+   LED. Test missing/full SD card handling and reboot behavior.
+2. During open hours, demonstrate a denied repeat entry and verify the event
+   records remain readable with the CLI.
+3. Demonstrate CLI queries, admin schedule changes, adding/deleting a user, and
+   the refusal to delete an occupied user.
+4. Demonstrate both room lights and off-delay, empty-building light shutdown,
+   link outage/recovery, and serial diagnostics.
+5. Check the feedback LED pulses visually in Wokwi. The current feedback LED
+   does not actuate a real door, and the keypad B tailgate marker is simulated
+   rather than an automatic sensor.
+   After reboot or a simulated tailgate, occupancy remains uncertain until a
+   staff member checks the building and an administrator runs `confirm-empty`.
+6. Save simulator logs, screenshots, or video if available. Submit the project,
+   report, member contribution statements, and walkthroughs through the Google
+   Drive or GitHub link accepted by the lecturer. A published Wokwi URL is
+   optional supporting evidence.
 
-The 1 November completion plan assigns Grace the door mechanisms, indicators, buzzer, tailgate input and their Wokwi evidence. Leon's runtime owns access decisions and calls her actuator API; it does not own the inside list or schedule.
-
-1. Add an entrance output/actuator module (for example, `components/entrance/actuator.c` with a small public header) that receives grant/deny outcomes from the entrance runtime and drives the correct entry/exit door indicator or simulated actuator. Use safe inactive defaults on startup and on errors.
-2. Add the corresponding components and pin assignments to `diagram.json` and `docs/INTERFACES.md`. Check for pin conflicts with the existing RFID, LCD, keypad, room, and future SD SPI assignments.
-3. Add denial feedback (such as a buzzer/indicator) and implement a clearly labelled simulation-only tailgate trigger if Leon's safety design uses that trigger. Coordinate the event contract with Leon; the simulated trigger must not be presented as actual tailgate sensing.
-4. Add a reproducible demo checklist and evidence showing granted entry, granted exit, denied entry/exit, and safe outputs after reboot/error. If real door hardware is used, document the driver/isolation and do not drive a load directly from an ESP32 GPIO.
-5. Review whether the course brief requires a separate innovation feature for Grace. Door actuation and denial feedback satisfy interface/hardware needs but should not automatically be counted as an innovation feature.
-
-If Grace is assigned another role by the team, update this section and the README together so the report and code ownership agree.
-
-## Shared integration tasks
-
-These tasks need more than one owner and are not complete when a single module compiles:
-
-1. **Agree interfaces:** Confirm the versioned shared types and ownership in `docs/INTERFACES.md`. Decide whether remote occupancy, schedule, access-event messages, and room configuration are required by the coursework demonstration. Avoid creating a second writer for inside count, schedule, room state, or SD files.
-2. **Finish the simulation circuit:** Add and review door outputs and the SD card using Wokwi parts; check the shared SPI wiring, pull-ups, boot-safe levels, and pin assignments in the diagram. Publish and open the Wokwi project. Its one-board limit means it cannot show three separate ESP32s in one simulation.
-3. **Run end-to-end scenarios:** Exercise authorized and unauthorized entry/exit, anti-passback, schedule open/closed and clock fault, both room lights and delay, link outage/reconnect, serial reads/admin changes, SD success/failure, concurrent updates, and the safety/evacuation flow. Save logs/screenshots or video and label whether each result came from a host test, Wokwi, or physical hardware.
-4. **Verify release build:** Build all intended PlatformIO roles from a clean final revision. Confirm `diagram.json` parses and the firmware/ELF paths match `wokwi.toml`. Review the generated `sdkconfig.esp32dev` change; commit it only if the team confirms it is a deliberate, compatible project configuration update.
-5. **Finish coursework package:** Complete the system operation report (architecture, hardware, software, limitations, setup/use, test evidence, Wokwi URL); add all four members' names and contribution statements; collect one walkthrough video per member and prepare the final presentation. Submit by the current course deadline and retain submission confirmation.
-
-## Completion gate
-
-The team can call the implementation complete when every required behavior above has an owner, the missing modules are integrated, the end-to-end scenarios have recorded evidence, the final builds pass, and the report/videos/submission package are complete. A host test or successful firmware build alone does not prove physical UART, SD-card, Wokwi, or full-system behavior.
-
-## Source notes
-
-- Original requirement and issue mapping: [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
-- Current module ownership and limits: [`LEON_WORK.md`](LEON_WORK.md), [`TREVOR_GUIDE.md`](TREVOR_GUIDE.md), and [`INTERFACES.md`](INTERFACES.md).
-- Leon's planned safety feature: [`LEON_ENTRANCE_SAFETY_DESIGN.md`](LEON_ENTRANCE_SAFETY_DESIGN.md).
-- Existing demo sequence: [`PRESENTATION_DEMO.md`](PRESENTATION_DEMO.md).
+The Wokwi credential is not stored in the repository. If the CLI cannot
+authenticate, perform the interactive run in the Wokwi website using a valid
+private project session; do not treat `wokwi-cli lint --offline` as a simulation.

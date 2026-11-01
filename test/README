@@ -1,8 +1,6 @@
+# Host tests
 
-This directory is intended for PlatformIO Test Runner and project tests.
-
-The entrance core has a small portable host check. From the repository root,
-compile and run it with:
+Run the portable entrance rules test from the repository root:
 
 ```sh
 gcc -std=c11 -Wall -Wextra -Werror -Iinclude \
@@ -10,14 +8,22 @@ gcc -std=c11 -Wall -Wextra -Werror -Iinclude \
 /tmp/test_entrance
 ```
 
-This checks access decisions and occupancy transitions. It does not test the
-ESP32 drivers or prove that the Wokwi circuit has run.
+Run Trevor's portable room/protocol tests:
 
-Unit Testing is a software testing method by which individual units of
-source code, sets of one or more MCU program modules together with associated
-control data, usage procedures, and operating procedures, are tested to
-determine whether they are fit for use. Unit testing finds problems early
-in the development cycle.
+```sh
+gcc -std=c11 -Wall -Wextra -Werror -Iinclude \
+  test/test_trevor.c components/trevor/core.c -o /tmp/test_trevor
+/tmp/test_trevor
+```
 
-More information about PlatformIO Unit Testing:
-- https://docs.platformio.org/en/latest/advanced/unit-testing/index.html
+`test/test_runtime.c` exercises the FreeRTOS adapter with Windows thread and
+GPIO stubs. Run the full suite on Windows with PowerShell and a C compiler:
+
+```powershell
+./scripts/test-trevor.ps1 -Compiler 'C:\path\to\tcc.exe'
+```
+
+These host tests check firmware logic; they do not verify ESP32 electrical
+behavior, Wokwi hardware interactions, physical multi-board timing, or reboot
+recovery. For current end-to-end evidence, see
+[`../docs/COURSEWORK_COMPLETION_PLAN.md`](../docs/COURSEWORK_COMPLETION_PLAN.md).

@@ -1,4 +1,10 @@
-# Verification record — 27 October 2026
+# Trevor subsystem verification record — historical (27 October 2026)
+
+This is a record of Trevor's earlier module checks. For the latest combined
+firmware, integration evidence, and outstanding acceptance work, see
+[`COURSEWORK_COMPLETION_PLAN.md`](COURSEWORK_COMPLETION_PLAN.md). The Windows
+commands and environment details below describe the original verification
+machine and are not the current Fedora workflow.
 
 | Check | Result |
 | --- | --- |
@@ -26,6 +32,6 @@ The sandbox stalled when Ninja spawned compiler probes. For verification only, a
 - Interactive Wokwi execution: browser access stalled; successful visual simulation is not claimed. The diagram and built firmware are supplied for the VS Code extension.
 - Three physical ESP32 UART wiring, separate clocks and reboot checks: not executed. Wokwi does not support multiple wired microcontrollers per simulation.
 - Edward's SD/authentication and Leon's entrance/occupancy/schedule integration: outside this module. The default storage hook reports unavailable.
-- Shared Wokwi link, teammate review/PR, agreed innovation, final report and recorded video remain team deliverables.
+- A Google Drive or GitHub submission link, teammate review/PR, agreed innovation, final report and recorded video remain team deliverables. A Wokwi link is optional supporting evidence.
 
 The working copy uses `feat/trevor-room-terminals`. Git metadata in the requested OneDrive repository was restricted, so source files were copied there without changing its branch, index or commits.
