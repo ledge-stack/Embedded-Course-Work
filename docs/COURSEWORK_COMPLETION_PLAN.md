@@ -13,7 +13,7 @@ from simulation evidence. Folder ownership is also listed in
 ### Leon Nsitta — entrance and integration
 
 - Two RFID readers, known-user checks, entry/exit decisions, anti-passback,
-  inside list/count, access schedule and safe exit behavior.
+  inside list/count, and schedule checks at both doors.
 - Kampala SNTP clock, schedule persistence, LCD, keypad, Wi-Fi dashboard,
   evacuation roll-call, after-hours alert, and access-event handoff.
 - `entrance_runtime_set_users()` accepts Edward's saved roster without allowing
@@ -69,9 +69,11 @@ in `wokwi.toml`.
 
 Local evidence from this update:
 
-- All four PlatformIO environments passed after the integrated changes; the
-  three auxiliary SDK configs now match the board's 4 MB flash size.
-- The portable entrance and Trevor core tests passed.
+- All four PlatformIO environments passed after the both-door schedule rule
+  was added; the three auxiliary SDK configs match the board's 4 MB flash size.
+- The portable entrance test passed for schedule enforcement at entry and exit,
+  denied exit with unchanged occupancy, anti-passback, invalid exit and clock
+  failure. Trevor's portable core suite also passed.
 - On 1 November, the Wokwi RFID scenario mounted the SD card, granted the
   green demo card's entry and exit during open hours, returned occupancy to
   zero, and wrote both access records into `sdcard/events.csv`. It completed
@@ -86,9 +88,10 @@ Local evidence from this update:
 
 ## Still required before submission
 
-1. Run the Wokwi circuit to check roster persistence, authenticated CLI actions,
-   empty-building light shutdown, and the feedback LED. Test missing/full SD
-   card handling and reboot behavior.
+1. Run the Wokwi circuit to check schedule denial at both doors (including a
+   person already inside), clock-unavailable denial, roster persistence,
+   authenticated CLI actions, empty-building light shutdown, and the feedback
+   LED. Test missing/full SD card handling and reboot behavior.
 2. During open hours, demonstrate a denied repeat entry and verify the event
    records remain readable with the CLI.
 3. Demonstrate CLI queries, admin schedule changes, adding/deleting a user, and

@@ -32,9 +32,10 @@ building is empty only after a physical check. The roll-call lists registered
 names associated with accepted RFID events; it is not an independently verified
 headcount and it does not clear state.
 
-The schedule blocks new entry outside configured Kampala hours. A registered
-person already recorded inside can exit after closing so the schedule cannot
-trap an occupant. Unknown cards and exit-without-entry remain denied.
+The schedule blocks both entry and exit outside configured Kampala hours, as
+required by the coursework brief. A denied exit does not remove the person from
+the inside list. Unknown cards and exit-without-entry remain denied at all
+times.
 
 ## Presentation checks
 
@@ -45,7 +46,8 @@ trap an occupant. Unknown cards and exit-without-entry remain denied.
 3. Scan an unknown card and observe the denied result and LED pulse.
 4. Press keypad `B` and verify the uncertainty warning without a new person in
    the list. Press `C` and verify the report leaves the state unchanged.
-5. Check after-hours entry denial and safe exit for a person already inside.
+5. Check that both entry and exit are denied after closing, and that a denied
+   exit leaves the person's inside status unchanged.
 6. Observe the grant/deny LED pulses. Do not describe the LED as a lock or a
    buzzer.
 

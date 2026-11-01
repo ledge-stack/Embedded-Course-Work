@@ -7,8 +7,9 @@
 The entrance terminal uses one RFID reader for entry and one for exit. The
 entrance runtime checks each card against its registered-user list, checks the
 schedule for entry, and updates one inside list. A person who is already inside
-cannot enter again. A person who is not inside cannot exit. A known person can
-still leave after closing time.
+cannot enter again. A person who is not inside cannot exit. Both readers enforce
+the configured hours, so a closed schedule denies exit and keeps that person in
+the recorded inside list.
 
 The schedule uses Kampala time from SNTP. Entry is denied when the clock is
 unavailable, because the system cannot confirm that entry is allowed. The

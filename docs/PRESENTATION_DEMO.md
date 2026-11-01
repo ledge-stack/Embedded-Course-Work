@@ -31,9 +31,9 @@ room-lights-off-at-zero rule.
    to 0. Present it at exit again to demonstrate exit-without-entry denial.
 4. Choose Green Card (UID `11:22:33:44`) for the second demo user. Choose the
    Red Card preset to demonstrate an unknown-card denial.
-5. Present a known card outside the access schedule to demonstrate schedule
-   denial. A known person already inside can exit after closing. At close,
-   serial logs list any remaining occupants.
+5. Present a known card outside the access schedule at both readers to show
+   that entry and exit are denied. A denied exit leaves occupancy unchanged.
+   At close, serial logs list any remaining occupants.
 
 The scenario `scenarios/rfid-entry-exit.yaml` passed in Wokwi: the SD card
 mounted, the green demo card entered and exited during open hours, occupancy

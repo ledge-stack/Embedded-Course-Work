@@ -101,8 +101,9 @@ and #18 in `docs/IMPLEMENTATION_PLAN.md`). Keep each item demonstrable:
 4. **Occupancy:** allow a valid entry once, reject a second entry while that
    user is inside, allow their exit, and reject an exit when they are not inside.
 5. **Hours and clock:** use Kampala local time from SNTP. Deny new entry if time
-   is unknown or the schedule is closed. A person already inside can still
-   leave after closing. Show people still inside in the close-time log.
+   is unknown or the schedule is closed. The same schedule blocks exits after
+   closing; show the denied scan and unchanged inside count. Show people still
+   inside in the close-time log.
 6. **Admin schedule changes:** demonstrate keypad and Wi-Fi changes, validation
    of opening/closing times, lockout after repeated wrong PINs, and persistence
    after reboot. Both interfaces must call the same schedule API.

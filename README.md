@@ -36,9 +36,9 @@ pio run -e esp32dev
 The combined one-ESP32 presentation build is `pio run -e esp32dev` (`TR_ROLE=0`);
 Trevor's `coordinator`, `room1`, and `room2` environments are separate physical
 roles and do not start Leon's entrance pins. The demo joins `Wokwi-GUEST` and
-uses SNTP for the Kampala access schedule. Entry
-fails closed if time is unavailable; an authorized person who is inside can
-still exit. If no saved roster exists, the demo starts with UID `DE:AD:BE:EF`
+uses SNTP for the Kampala access schedule. Both entry and exit fail closed if
+time is unavailable or the schedule is closed. If no saved roster exists, the
+demo starts with UID `DE:AD:BE:EF`
 and `11:22:33:44`; admin roster changes are saved to the SD card with an NVS
 backup.
 The LCD shows entrance status, schedule, last event, and occupancy. Admins can

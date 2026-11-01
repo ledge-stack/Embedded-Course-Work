@@ -31,7 +31,7 @@ Issues #1-18 have been created in GitHub in this dependency order. Each issue bo
 
 5. **Implement entrance and exit RFID access control** - Leon. Read both RFID points, validate registered tags, actuate the correct door, report outcomes and reject unknown tags.
 6. **Track building occupancy and prevent invalid transitions** - Leon. Record entry/exit events, block double entry and exit without a prior entry, and keep an accurate current inside list/count.
-7. **Enforce a configurable access schedule** - Leon. Provide a reliable clock source, store the allowed start/end times, enforce the schedule at both doors, and specify/log/alert on people still inside when the period closes. Do not strand occupants: define and demonstrate the approved exit behavior from the brief with the team.
+7. **Enforce a configurable access schedule** - Leon. Provide a reliable clock source, store the allowed start/end times, enforce the schedule at both entry and exit doors, and specify/log/alert on people still inside when the period closes.
 8. **Implement room occupancy and automatic lighting** - Trevor. Add one occupancy input and light output per room, apply a configurable off-delay, and publish each room's occupancy/light state.
 9. **Implement terminal messaging and reconnect behavior** - Trevor. Send room/access state to shared consumers; handle lost messages, duplicate delivery and reconnection without silently corrupting state.
 10. **Synchronize shared state and concurrent writes** - Trevor. Use FreeRTOS queues and mutexes/semaphores for event processing, shared occupancy/configuration and serialized storage access. Document and demonstrate a concurrent update scenario.

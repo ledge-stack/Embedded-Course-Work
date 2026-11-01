@@ -77,9 +77,9 @@ system_access_result entrance_apply_event(entrance_state *state, uint32_t event_
         result = SYSTEM_ACCESS_ALREADY_INSIDE;
     else if (point == SYSTEM_EXIT && !state->inside[found])
         result = SYSTEM_ACCESS_NOT_INSIDE;
-    else if (point == SYSTEM_ENTRY && !clock_valid)
+    else if (!clock_valid)
         result = SYSTEM_ACCESS_CLOCK_UNAVAILABLE;
-    else if (point == SYSTEM_ENTRY && !entrance_is_open(state->schedule, local_minute))
+    else if (!entrance_is_open(state->schedule, local_minute))
         result = SYSTEM_ACCESS_SCHEDULE_CLOSED;
     else {
         state->inside[found] = (point == SYSTEM_ENTRY);

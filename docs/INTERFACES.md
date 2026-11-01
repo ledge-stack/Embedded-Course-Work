@@ -57,9 +57,10 @@ feedback output is in the `actuator` component.
 
 system_access_schedule uses local minutes after midnight in
 Africa/Kampala (UTC+03:00). A start before end defines [start,end). A start
-after end defines an overnight interval. Equal endpoints are rejected. Only
-entry is schedule-gated. A known person already inside can exit after closing;
-unknown cards and exit-without-entry remain denied.
+after end defines an overnight interval. Equal endpoints are rejected. Both
+entry and exit are schedule-gated. A known person recorded inside is
+denied exit while the schedule is closed; the inside list remains unchanged.
+Unknown cards and exit-without-entry remain denied at all times.
 
 ## One-board Wokwi pin map
 
@@ -102,8 +103,9 @@ Wokwi RFID scenario mounted the card and wrote the entry and exit events.
 The demo joins the open Wokwi-GUEST network and synchronizes with SNTP. The
 timezone conversion is EAT-3 (Kampala, UTC+03:00, no daylight-saving change).
 If network/time synchronization fails, entry is denied and reported as a clock
-fault. Exit for an authorized person already inside remains available. At the
-closing boundary the serial log lists any people still inside. The schedule
+fault. Entry and exit are denied if the clock is unavailable or the schedule is
+closed. At the closing boundary the serial log lists any people still inside.
+The schedule
 defaults to 08:00-18:00 and keypad/dashboard changes persist in NVS. The Wi-Fi
 dashboard listens on HTTP port 80 and requires Wokwi's Private IoT Gateway for
 browser access from outside the simulated ESP32. This dashboard and PIN are

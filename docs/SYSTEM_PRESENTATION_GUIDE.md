@@ -155,9 +155,9 @@ the live schedule under the entrance mutex.
 
 The default schedule is 08:00 to 18:00 Kampala time. A schedule that starts
 after it ends is treated as an overnight window. Equal start and end times are
-rejected. New entry requires a valid clock and an open schedule. A known person
-already recorded inside may exit after closing, so the schedule cannot trap an
-occupant inside.
+rejected. Both entry and exit require a valid clock and an open schedule. The
+coursework brief explicitly requires the schedule to restrict both doors; a
+denied exit leaves the person recorded inside.
 
 Edward's UART0 CLI also supports read-only queries (`status`, `inside`,
 `rooms`, `users`, `records`, and `schedule`). Type `login 2468` to open a
@@ -277,12 +277,9 @@ The decision order is:
 | Card is not in the enabled roster | Deny as unknown user. | No |
 | User is already inside and scans entry | Deny as already inside (anti-passback). | No |
 | User is not inside and scans exit | Deny as not inside. | No |
-| Entry scan but clock is unavailable | Deny until time is known. | No |
-| Entry scan while the schedule is closed | Deny new entry. | No |
+| Entry or exit scan but clock is unavailable | Deny until time is known. | No |
+| Entry or exit scan while the schedule is closed | Deny access through that door. | No |
 | Valid entry or exit | Grant. | Yes, update that user's inside flag. |
-
-An exit for a known user recorded inside does not check the schedule. This is
-the rule that lets people leave safely after closing.
 
 This separation makes the rules easier to explain and run in a normal host
 test. It also keeps hardware code from secretly changing policy.
@@ -597,11 +594,13 @@ Useful messages to show during a demo include:
    runtime updates the inside count.
 4. **Show anti-passback.** Present the same card again at entry. The count
    stays the same and the log says the user is already inside.
-5. **Show a safe exit.** Present that card at the exit reader. The person is
-   removed from the inside list. Present it at exit again to show that an
-   invalid exit is denied.
-6. **Show schedule behavior.** Demonstrate a closed schedule or explain the
-   clock-unavailable fail-closed rule. A known occupant can still exit.
+5. **Show exit and anti-passback state.** During open hours, present that card
+   at the exit reader and confirm the person is removed from the inside list.
+   Present it at exit again to show that an invalid exit is denied.
+6. **Show both-door schedule behavior.** Close the schedule while a known
+   person is recorded inside. Scan at entry and exit; both scans are denied and
+   the inside count stays unchanged. The clock-unavailable rule also denies
+   both doors.
 7. **Show the room side.** Trigger each PIR, demonstrate the light and off
    delay, then toggle the simulated link switch and point to the room status
    and reconnect snapshot.
@@ -669,13 +668,12 @@ It counts registered cards that have been granted entry and not yet granted
 exit. It does not detect someone following another person. After a simulated
 tailgate, the report marks the occupancy as uncertain.
 
-**Why can a person exit after closing?**
-Closing time stops new entry. It must not trap someone who is already recorded
-inside.
+**How does the schedule apply to the exit door?**
+The brief requires both doors to follow the schedule. When closed, exit is
+denied and the person's inside record remains set.
 
 **What happens if the clock or Wi-Fi is unavailable?**
-New entry is denied until the system has a valid synchronized clock. A known
-person who is inside can still exit.
+Entry and exit are denied until the system has a valid synchronized clock.
 
 **Is one Wokwi ESP32 the same as three physical ESP32 boards?**
 No. The one-board presentation build runs the room logic as logical tasks and
@@ -687,8 +685,8 @@ UART demonstration is a separate test.
 - All four PlatformIO environments (`esp32dev`, `coordinator`, `room1` and
   `room2`) built successfully on 1 November 2026 after the integrated changes.
   The role configs now match the 4 MB board size.
-- The portable entrance-core test passed for entry, anti-passback, safe exit,
-  invalid exit, closed hours and unavailable clock.
+- The portable entrance-core test passed for entry, anti-passback, invalid
+  exit, schedule checks at both doors, closed hours and unavailable clock.
 - The local `diagram.json` connects both MFRC522 readers and the SD card to the
   shared SPI bus. The Wokwi CLI scenario passed: the card mounted, the green
   demo card entered and exited, occupancy returned to zero, and both access

@@ -13,9 +13,9 @@ room-control contribution.
 - Added building occupancy and anti-passback behavior. Re-entry while inside
   and exit without an active entry are denied. The event API rejects duplicate
   and older sequence IDs.
-- Added the Kampala access-window rules and SNTP time setup. Entry fails closed
-  when time is unavailable or the schedule is closed. A person already inside
-  can exit after closing. Schedule changes from the authenticated keypad or
+- Added the Kampala access-window rules and SNTP time setup. Both entry and
+  exit fail closed when time is unavailable or the schedule is closed.
+  Schedule changes from the authenticated keypad or
   Wi-Fi dashboard are saved in ESP32 NVS.
 - Added a keypad PIN flow for changing opening and closing times, plus an
   authenticated Wi-Fi dashboard for viewing live entrance status and changing
