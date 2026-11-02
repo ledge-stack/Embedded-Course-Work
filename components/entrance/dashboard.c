@@ -138,6 +138,41 @@ static bool receive_body(httpd_req_t *req, char *body, size_t capacity) {
     body[received] = 0;
     return true;
 }
+static int hex_digit(char value) {
+    if (value >= '0' && value <= '9')
+        return value - '0';
+    if (value >= 'A' && value <= 'F')
+        return value - 'A' + 10;
+    if (value >= 'a' && value <= 'f')
+        return value - 'a' + 10;
+    return -1;
+}
+static bool decode_form_body(char *body) {
+    char *read = body;
+    char *write = body;
+    while (*read) {
+        if (*read == '%') {
+            if (!read[1] || !read[2])
+                return false;
+            int high = hex_digit(read[1]);
+            int low = hex_digit(read[2]);
+            if (high < 0 || low < 0)
+                return false;
+            char decoded = (char)((high << 4) | low);
+            if (!decoded)
+                return false;
+            *write++ = decoded;
+            read += 3;
+        } else if (*read == '+') {
+            *write++ = ' ';
+            read++;
+        } else {
+            *write++ = *read++;
+        }
+    }
+    *write = 0;
+    return true;
+}
 static esp_err_t index_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "text/html; charset=utf-8");
     httpd_resp_set_hdr(req, "Cache-Control", "no-store");
@@ -234,7 +269,7 @@ static esp_err_t schedule_handler(httpd_req_t *req) {
     if (req->content_len <= 10 || req->content_len > BODY_MAX)
         return send_error(req, 400, "Invalid schedule");
     char body[BODY_MAX + 1] = {0};
-    if (!receive_body(req, body, sizeof(body)))
+    if (!receive_body(req, body, sizeof(body)) || !decode_form_body(body))
         return send_error(req, 400, "Invalid schedule");
     char *start = strstr(body, "start="), *end = strstr(body, "end=");
     if (!start || !end)
