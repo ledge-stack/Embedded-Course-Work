@@ -27,3 +27,17 @@ These host tests check firmware logic; they do not verify ESP32 electrical
 behavior, Wokwi hardware interactions, physical multi-board timing, or reboot
 recovery. For current end-to-end evidence, see
 [`../docs/COURSEWORK_COMPLETION_PLAN.md`](../docs/COURSEWORK_COMPLETION_PLAN.md).
+
+Regression tests for keypad masking, encoded HTTP schedule forms, strict CLI
+times, idle/partial/overlong serial input, concurrent schedule commits, bounded
+record printing and NVS/SD roster recovery:
+
+```powershell
+$env:CC = 'C:\path\to\tcc.exe'
+$env:TEST_BUILD = "$env:TEMP\cocis-tests"
+python .\test\test_regressions.py
+```
+
+The regression harness compiles the actual affected C function bodies. It uses
+host substitutes for HTTP requests, NVS, task input and synchronization; those
+checks do not claim an end-to-end Wokwi run or physical power-loss verification.

@@ -4,6 +4,10 @@
 
 **Submission date in the original plan:** 2 November 2026
 
+**2 November correction:** see [FIX_VERIFICATION.md](FIX_VERIFICATION.md) for the
+direct code fixes, successful combined firmware rebuild and 13 passing new
+regression tests. The Wokwi checks below remain separate live evidence.
+
 This document records the current code by member and separates build evidence
 from simulation evidence. Folder ownership is also listed in
 [`COMPONENT_OWNERSHIP.md`](COMPONENT_OWNERSHIP.md).
@@ -42,7 +46,8 @@ from simulation evidence. Folder ownership is also listed in
   wait for the storage worker's flush/sync result. Missing-card or write
   failures are counted and do not stop local control; the active schedule is
   saved independently in NVS.
-- Registered-user roster saved to SD with an NVS backup and loaded at startup.
+- Registered-user roster committed to NVS with an SD mirror and loaded before
+  RFID tasks start. NVS takes precedence when an older SD card returns.
 - UART0 commands: `help`, `status`, `inside`, `rooms`, `usage`, `users`, `records`,
   `schedule`, `login PIN`, and `logout`. A 60-second admin session is required
   for `open HH:MM`, `close HH:MM`, `useradd NAME UIDHEX`, and `userdel ID`.

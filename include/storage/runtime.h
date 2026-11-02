@@ -14,6 +14,7 @@ bool tr_storage_append(const tr_storage_event *event);
 bool storage_runtime_available(void);
 void storage_runtime_print_events(FILE *output);
 esp_err_t storage_runtime_load_users(system_user users[SYSTEM_MAX_USERS]);
+/* ESP_OK means committed to authoritative NVS; SD mirror failures are warnings. */
 esp_err_t storage_runtime_save_users(const system_user users[SYSTEM_MAX_USERS]);
 
 #endif

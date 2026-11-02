@@ -15,7 +15,7 @@ flowchart TD
     GRACE[Grace: feedback LED]
     AUTH[Shared PIN verifier]
     COMMON[Shared data types]
-    N[NVS settings and roster backup]
+    N[NVS settings and authoritative roster]
     CARD[RFID readers]
     ROOM[PIR sensors and room lights]
     SD[microSD and NVS]
@@ -38,7 +38,7 @@ flowchart TD
     LEON --> AUTH
     EDWARD --> AUTH
     LEON -->|save schedule| N
-    EDWARD -->|save roster backup| N
+    EDWARD -->|commit roster| N
     CONSOLE <--> EDWARD
 ```
 
@@ -116,8 +116,9 @@ the audit row was not confirmed.
 
 For roster changes, Edward's CLI asks the entrance runtime for a snapshot,
 validates the proposed new roster through Leon's API, and asks storage to save
-it. Storage writes a backup to NVS and the roster file to SD. If saving fails,
-the CLI restores the previous live roster. A person recorded inside cannot be
+it. Storage commits the roster to NVS and mirrors it to SD. An NVS failure makes
+the CLI restore the previous live roster; an SD mirror failure is a warning
+after the successful NVS commit. A person recorded inside cannot be
 removed. The keypad and dashboard currently provide schedule administration;
 the serial CLI provides schedule and roster administration.
 

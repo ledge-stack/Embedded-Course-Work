@@ -10,6 +10,7 @@
 #include "nvs.h"
 #include <inttypes.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
@@ -179,11 +180,23 @@ static void unmount_card(void) {
 esp_err_t storage_runtime_load_users(system_user users[SYSTEM_MAX_USERS]) {
     if (!users)
         return ESP_ERR_INVALID_ARG;
+    /* NVS is authoritative: an old reinserted SD card must not revive deleted users. */
     xSemaphoreTake(file_mutex, portMAX_DELAY);
-    bool mounted = ready;
-    xSemaphoreGive(file_mutex);
-    if (mounted) {
-        xSemaphoreTake(file_mutex, portMAX_DELAY);
+    nvs_handle_t handle;
+    esp_err_t error = nvs_open("users", NVS_READONLY, &handle);
+    if (error == ESP_OK) {
+        size_t size = sizeof(system_user) * SYSTEM_MAX_USERS;
+        error = nvs_get_blob(handle, "roster", users, &size);
+        nvs_close(handle);
+        if (error == ESP_OK && size != sizeof(system_user) * SYSTEM_MAX_USERS)
+            error = ESP_ERR_INVALID_SIZE;
+    }
+    if (error != ESP_ERR_NVS_NOT_FOUND) {
+        xSemaphoreGive(file_mutex);
+        return error;
+    }
+    /* Support an existing version-1 SD roster on a device with no NVS roster. */
+    if (ready) {
         FILE *file = fopen(ROSTER_FILE, "rb");
         if (file) {
             roster_header header = {0};
@@ -193,55 +206,53 @@ esp_err_t storage_runtime_load_users(system_user users[SYSTEM_MAX_USERS]) {
                          header.byte_count == sizeof(system_user) * SYSTEM_MAX_USERS &&
                          fread(users, header.byte_count, 1, file) == 1;
             fclose(file);
-            xSemaphoreGive(file_mutex);
-            if (valid)
-                return ESP_OK;
-            ESP_LOGW(TAG, "SD roster file is invalid; trying NVS backup");
-        } else
-            xSemaphoreGive(file_mutex);
+            error = valid ? ESP_OK : ESP_ERR_INVALID_SIZE;
+        }
     }
-    nvs_handle_t handle;
-    esp_err_t error = nvs_open("users", NVS_READONLY, &handle);
-    if (error != ESP_OK)
-        return error;
-    size_t size = sizeof(system_user) * SYSTEM_MAX_USERS;
-    error = nvs_get_blob(handle, "roster", users, &size);
-    nvs_close(handle);
-    if (error == ESP_OK && size != sizeof(system_user) * SYSTEM_MAX_USERS)
-        return ESP_ERR_INVALID_SIZE;
+    xSemaphoreGive(file_mutex);
     return error;
 }
 
 esp_err_t storage_runtime_save_users(const system_user users[SYSTEM_MAX_USERS]) {
     if (!users)
         return ESP_ERR_INVALID_ARG;
-    /* Save to NVS first, so a missing SD card still has a backup copy. */
+    /* Commit the authoritative roster before updating its optional SD mirror. */
+    xSemaphoreTake(file_mutex, portMAX_DELAY);
     nvs_handle_t handle;
     esp_err_t error = nvs_open("users", NVS_READWRITE, &handle);
-    if (error != ESP_OK)
+    if (error != ESP_OK) {
+        xSemaphoreGive(file_mutex);
         return error;
+    }
     error = nvs_set_blob(handle, "roster", users, sizeof(system_user) * SYSTEM_MAX_USERS);
     if (error == ESP_OK)
         error = nvs_commit(handle);
     nvs_close(handle);
-    if (error != ESP_OK)
+    if (error != ESP_OK) {
+        xSemaphoreGive(file_mutex);
         return error;
-    if (!storage_runtime_available())
-        return ESP_OK; /* NVS remains the backup without SD. */
+    }
+    if (!ready) {
+        xSemaphoreGive(file_mutex);
+        ESP_LOGW(TAG, "roster saved in NVS; SD mirror unavailable");
+        return ESP_OK;
+    }
 
-    xSemaphoreTake(file_mutex, portMAX_DELAY);
     /* Write a temporary file before replacing the previous SD roster. */
     FILE *file = fopen(ROSTER_TEMP_FILE, "wb");
     if (!file) {
         unmount_card();
         xSemaphoreGive(file_mutex);
-        return ESP_FAIL;
+        ESP_LOGW(TAG, "roster saved in NVS; could not update SD mirror");
+        return ESP_OK;
     }
     roster_header header = {
         .magic = ROSTER_MAGIC, .version = 1, .byte_count = sizeof(system_user) * SYSTEM_MAX_USERS};
     bool saved = fwrite(&header, sizeof(header), 1, file) == 1 &&
                  fwrite(users, sizeof(system_user) * SYSTEM_MAX_USERS, 1, file) == 1;
     if (fflush(file) != 0)
+        saved = false;
+    if (fsync(fileno(file)) != 0)
         saved = false;
     if (fclose(file) != 0)
         saved = false;
@@ -256,29 +267,48 @@ esp_err_t storage_runtime_save_users(const system_user users[SYSTEM_MAX_USERS]) 
         unmount_card();
     xSemaphoreGive(file_mutex);
     if (!saved)
-        ESP_LOGE(TAG, "could not save roster to SD card; NVS backup was updated");
-    return saved ? ESP_OK : ESP_FAIL;
+        ESP_LOGW(TAG, "roster saved in NVS; could not update SD mirror");
+    /* An SD error must not make the CLI roll back an already committed roster. */
+    return ESP_OK;
 }
 
 void storage_runtime_print_events(FILE *output) {
     if (!output)
         return;
-    xSemaphoreTake(file_mutex, portMAX_DELAY);
-    if (!ready) {
-        fprintf(output, "SD card unavailable; no records to show.\n");
-        xSemaphoreGive(file_mutex);
+    char *text = malloc(2049);
+    if (!text) {
+        fprintf(output, "Not enough memory to read records.\n");
         return;
     }
-    FILE *file = fopen(EVENT_FILE, "r");
-    if (!file)
-        fprintf(output, "No event file yet.\n");
+    const char *message = NULL;
+    size_t used = 0;
+    long size = 0;
+    xSemaphoreTake(file_mutex, portMAX_DELAY);
+    if (!ready) message = "SD card unavailable; no records to show.\n";
     else {
-        char line[128];
-        while (fgets(line, sizeof(line), file))
-            fputs(line, output);
-        fclose(file);
+        FILE *file = fopen(EVENT_FILE, "r");
+        if (!file) message = "No event file yet.\n";
+        else {
+            if (fseek(file, 0, SEEK_END) != 0 || (size = ftell(file)) < 0 ||
+                fseek(file, size > 2048 ? size - 2048 : 0, SEEK_SET) != 0)
+                message = "Could not read records.\n";
+            else {
+                used = fread(text, 1, 2048, file);
+                if (ferror(file)) message = "Could not read records.\n";
+            }
+            fclose(file);
+        }
     }
     xSemaphoreGive(file_mutex);
+    /* Slow UART output must not hold the SD writer's mutex. */
+    text[used] = 0;
+    char *start = text;
+    if (size > 2048) {
+        char *newline = strchr(text, '\n');
+        start = newline ? newline + 1 : text + used;
+    }
+    fputs(message ? message : start, output);
+    free(text);
 }
 
 /* Trevor's single storage task is the only caller, so file writes are serialized. */

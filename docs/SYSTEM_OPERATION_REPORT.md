@@ -89,7 +89,7 @@ flowchart LR
     ROOMS --> QUEUE
     QUEUE --> STORAGE[Edward: serialized SD writer]
     STORAGE --> SD[SD event log]
-    CFG --> NVS[NVS schedule and roster backup]
+    CFG --> NVS[NVS schedule and authoritative roster]
     CFG --> SD
 ```
 
@@ -126,11 +126,10 @@ presentation build, startup proceeds in this order:
 3. Start Trevor's room runtime. It initializes the room inputs/outputs and
    creates the room, coordinator, status, and storage tasks.
 4. Start Grace's actuator interface and configure the feedback LED.
-5. Start Leon's entrance runtime. It loads the schedule, initializes both RFID
-   readers and the LCD, then starts the clock, RFID, schedule-monitor, display,
-   and keypad tasks.
-6. Load a saved roster from SD or NVS when one exists. On a clean install, the
-   demo roster contains UIDs `DE:AD:BE:EF` and `11:22:33:44`.
+5. Initialize Leon's entrance runtime, schedule, both RFID readers and the LCD.
+6. Load a saved roster using NVS first and legacy SD only if no NVS roster
+   exists, then start the clock, RFID, schedule-monitor, display and keypad tasks.
+   On a clean install, the demo UIDs are `DE:AD:BE:EF` and `11:22:33:44`.
 7. Start an occupancy bridge. Every 250 ms it reads the entrance count and
    certainty and passes them to Trevor's room runtime.
 8. Start Edward's serial menu on UART0 at 115200 baud.
@@ -279,7 +278,7 @@ The system uses RAM, NVS, and the microSD card for different purposes:
 | Information | Storage location | Behavior after power loss or restart |
 | --- | --- | --- |
 | Active opening/closing schedule | ESP32 NVS, namespace `access_cfg` | Loaded again during entrance startup. A 23:00 closing time remains active if its NVS commit succeeded. |
-| Registered-user roster | `/sdcard/users.bin`, with NVS backup | Loaded from SD when valid; NVS is fallback. |
+| Registered-user roster | Authoritative ESP32 NVS, mirrored at `/sdcard/users.bin` | NVS is loaded first; legacy SD is used only when no NVS roster exists. |
 | Access attempts and decisions | `/sdcard/events.csv` | New records are appended, flushed, synced, and closed before the access caller receives a successful storage result. |
 | Schedule-change audit rows | `/sdcard/events.csv` | Records old and new times after the NVS schedule commit. If SD logging fails, NVS still keeps the active schedule and a warning is logged. |
 | Room state events | `/sdcard/events.csv` | Queued asynchronously by the room runtime; queue drops and write failures are counted. |
@@ -330,7 +329,7 @@ together.
 | `rooms` | Show online state, motion, light state, and off-delay for both rooms. | Not required. |
 | `usage` | Show light-on and empty-building-suppressed time since boot. | Not required. |
 | `users` | Show registered users and their stable slot IDs. | Not required. |
-| `records` | Print records stored in the SD event file. | Not required. |
+| `records` | Print approximately the last 2 KB of the SD event file without holding its lock during UART output. | Not required. |
 | `schedule` | Print current Kampala opening and closing hours. | Not required. |
 | `login 2468` / `logout` | Start or end the temporary admin session. | PIN required for login. |
 | `open HH:MM` / `close HH:MM` | Change schedule hours. | Admin session required. |
@@ -400,7 +399,7 @@ was synced without making the room-control task wait for storage.
 | --- | --- | --- |
 | **Leon Nsitta Kalungi** | Project setup and integration; entry/exit RFID, access rules, anti-passback, inside tracking, Kampala schedule, time handling, LCD, keypad, dashboard, roll-call, and access-event handoff. | `components/entrance/`, `include/entrance/`, `src/main.c` |
 | **Kato Trevor** | Two room PIR/light channels, off-delay, room protocol, sequence and checksum checks, acknowledgements, retries, synchronization diagnostics, bounded event queue, single storage worker, building-empty safety rule, and light-use counters. | `components/trevor/`, `include/trevor/` |
-| **Kagimu Edward** | Shared SPI and SD-card interface, event logging, roster file and NVS backup, UART0 query menu, records reader, and authenticated schedule/user administration. | `components/storage/`, `components/cli/`, `include/storage/`, `include/cli/` |
+| **Kagimu Edward** | Shared SPI and SD-card interface, event logging, authoritative NVS roster and SD mirror, UART0 query menu, records reader, and authenticated schedule/user administration. | `components/storage/`, `components/cli/`, `include/storage/`, `include/cli/` |
 | **Ahurira Grace** | Blue access-feedback LED interface with different pulse lengths for grants and denials, plus its wiring contract. | `components/actuator/`, `include/actuator/` |
 
 ### Member identification details

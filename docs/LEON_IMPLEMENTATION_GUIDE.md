@@ -96,7 +96,7 @@ item demonstrable:
 3. **RFID access:** demonstrate a known card, an unknown card, and the correct
    reader. The current allowlist is two presentation users, not a user
   management system. Edward's store can supply its roster with
-  `entrance_runtime_set_users()`; until then, the demo roster remains active.
+  `entrance_runtime_set_users()`; startup loads saved users before starting RFID tasks.
 4. **Occupancy:** allow a valid entry once, reject a second entry while that
    user is inside, allow their exit, and reject an exit when they are not inside.
 5. **Hours and clock:** use Kampala local time from SNTP. Deny new entry if time
@@ -121,7 +121,7 @@ item demonstrable:
 - Grace's scan-feedback LED is integrated on GPIO12. It signals grant/deny with
   different pulse durations; it is not a door actuator.
 - Edward's serial roster manager calls `entrance_runtime_set_users()` and saves
-  the roster on SD with an NVS backup. Access and room events use the SD event
+  the authoritative roster in NVS with an SD mirror. Access and room events use the SD event
   writer; roster editing and CLI commands still need interactive Wokwi checks.
 - The UART0 CLI provides queries, the read-only room-light `usage` report, and
   authenticated schedule/user operations.

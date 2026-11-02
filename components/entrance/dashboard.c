@@ -138,6 +138,42 @@ static bool receive_body(httpd_req_t *req, char *body, size_t capacity) {
     body[received] = 0;
     return true;
 }
+static int form_hex(char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+}
+/* Read one exact form key, decoding browser escapes without accepting duplicates. */
+static bool form_value(const char *body, const char *key, char *out, size_t capacity) {
+    size_t key_size = strlen(key);
+    bool found = false;
+    for (const char *part = body; *part;) {
+        const char *end = strchr(part, '&');
+        if (!end) end = part + strlen(part);
+        if ((size_t)(end - part) > key_size && !memcmp(part, key, key_size) &&
+            part[key_size] == '=') {
+            if (found) return false;
+            size_t used = 0;
+            for (const char *p = part + key_size + 1; p < end; p++) {
+                unsigned char c = (unsigned char)*p;
+                if (c == '%') {
+                    if (end - p < 3) return false;
+                    int high = form_hex(p[1]), low = form_hex(p[2]);
+                    if (high < 0 || low < 0) return false;
+                    c = (unsigned char)((high << 4) | low);
+                    p += 2;
+                } else if (c == '+') c = ' ';
+                if (!c || used + 1 >= capacity) return false;
+                out[used++] = (char)c;
+            }
+            out[used] = 0;
+            found = true;
+        }
+        part = *end ? end + 1 : end;
+    }
+    return found;
+}
 static esp_err_t index_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "text/html; charset=utf-8");
     httpd_resp_set_hdr(req, "Cache-Control", "no-store");
@@ -149,14 +185,11 @@ static esp_err_t login_handler(httpd_req_t *req) {
     char body[BODY_MAX + 1] = {0};
     if (!receive_body(req, body, sizeof(body)))
         return send_error(req, 400, "Invalid login");
-    char *pin = strstr(body, "pin=");
-    if (!pin)
+    char pin[5];
+    if (!form_value(body, "pin", pin, sizeof(pin)))
         return send_error(req, 400, "Invalid login");
-    pin += 4;
-    char *amp = strchr(pin, '&');
-    if (amp)
-        *amp = 0;
     bool accepted = auth_runtime_verify_pin(pin);
+    memset(pin, 0, sizeof(pin));
     memset(body, 0, sizeof(body));
     if (!accepted)
         return send_error(req, 401, "Sign-in failed");
@@ -236,14 +269,10 @@ static esp_err_t schedule_handler(httpd_req_t *req) {
     char body[BODY_MAX + 1] = {0};
     if (!receive_body(req, body, sizeof(body)))
         return send_error(req, 400, "Invalid schedule");
-    char *start = strstr(body, "start="), *end = strstr(body, "end=");
-    if (!start || !end)
+    char start[6], end[6];
+    if (!form_value(body, "start", start, sizeof(start)) ||
+        !form_value(body, "end", end, sizeof(end)))
         return send_error(req, 400, "Invalid schedule");
-    start += 6;
-    char *amp = strchr(start, '&');
-    if (amp)
-        *amp = 0;
-    end += 4;
     uint16_t start_minute, end_minute;
     if (!parse_time_value(start, &start_minute) || !parse_time_value(end, &end_minute))
         return send_error(req, 400, "Use HH:MM");

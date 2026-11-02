@@ -60,7 +60,7 @@ module folders implement them.
 | --- | --- | --- |
 | `components/entrance/` | Leon Nsitta | `core.c` contains testable access rules. `runtime.c` coordinates two RFID readers, occupancy, schedule, logs, and tasks. `mfrc522.c` drives RFID readers. `display.c` updates the LCD. `keypad.c` handles keypad state and admin actions. `dashboard.c` serves the Wi-Fi page and routes. |
 | `components/trevor/` | Kato Trevor | `core.c` contains room/light and message rules. `runtime.c` runs the room tasks, coordinator, queue-based storage worker, retry logic, status counters, and logical or UART message links. |
-| `components/storage/` | Kagimu Edward | Initializes shared SPI, mounts the microSD card, appends CSV events, and reads or saves the user roster with an NVS backup. |
+| `components/storage/` | Kagimu Edward | Initializes shared SPI, mounts the microSD card, appends CSV events, and commits the authoritative user roster in NVS with an SD mirror. |
 | `components/cli/` | Kagimu Edward | Reads UART0 commands, prints status/records, and gates schedule and roster changes behind admin login. |
 | `components/actuator/` | Ahurira Grace | Controls the blue scan-feedback LED and its grant/deny pulse durations. |
 | `components/auth/` | Shared | Checks the demonstration PIN, protects failed-login state, and applies a temporary lockout. |

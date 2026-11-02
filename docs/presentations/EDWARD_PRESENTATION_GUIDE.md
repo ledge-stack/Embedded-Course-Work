@@ -3,8 +3,8 @@
 ## What I worked on
 
 I implemented the SD-card storage interface and UART0 serial management menu.
-My part stores room/access events, saves the registered-user roster with an
-NVS backup, reports storage availability, and provides read-only status and
+My part stores room/access events, commits the registered-user roster in NVS
+with an SD mirror, reports storage availability, and provides read-only status and
 authenticated administration commands.
 
 ## Suggested explanation
@@ -17,8 +17,8 @@ authenticated administration commands.
 > protects file access with a mutex. Access and schedule changes wait for the
 > file to be flushed, synced, and closed before the caller reports success.”
 
-> “The registered-user list is saved as a roster file on the SD card and backed
-> up in NVS. The serial command menu runs on the USB console. It can report
+> “The registered-user list is committed to NVS and mirrored to the SD card.
+> NVS takes precedence over an older reinserted card. The serial menu can report
 > status, people inside, rooms, light-use durations, users, records, and the
 > schedule. After admin login, it can change the schedule or user list. User
 > changes go through the entrance module's validation API, so the CLI does not
@@ -71,8 +71,8 @@ report queue drops and write failures.
 ## Concepts to explain simply
 
 - **SD card:** removable persistent storage for larger event records.
-- **NVS:** small ESP32 non-volatile storage used for settings and the roster
-  backup.
+- **NVS:** small ESP32 non-volatile storage used for settings and the
+  authoritative roster.
 - **Queue:** passes work to a single writer so concurrent tasks do not write a
   file at once.
 - **Mutex:** a lock that protects file reads/writes from overlapping.

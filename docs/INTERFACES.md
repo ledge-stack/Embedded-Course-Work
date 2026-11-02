@@ -19,7 +19,8 @@ All members should review it before extending the message protocol.
   entries to entrance_runtime_set_users() after it loads or changes the
   registered-user list. Array indexes are stable user IDs. The API rejects
   duplicate/invalid UIDs and refuses to remove or replace a user who is still
-  recorded inside. It saves the roster to SD with an NVS backup; on a clean device the
+  recorded inside. It commits the roster to authoritative NVS with an SD mirror;
+  startup loads it before reader tasks start. On a clean device the
   presentation build begins with the two demo users.
 - The public keypad reserves B for a simulation-only tailgate marker and C
   for a read-only evacuation roll-call. B marks occupancy uncertain but never
@@ -30,6 +31,7 @@ All members should review it before extending the message protocol.
   persists accepted values in NVS, then asks the storage worker to append a
   schedule-change audit row to SD. NVS remains the active schedule at boot; an
   SD audit-write failure is reported separately.
+  A configuration mutex serializes the complete NVS/RAM schedule transaction.
 - Access state updates use nonzero 32-bit sequence IDs. entrance_apply_event
   applies only newer IDs and returns SYSTEM_ACCESS_STALE_EVENT for duplicate or
   out-of-order deliveries. The serial RFID task is the only event producer in

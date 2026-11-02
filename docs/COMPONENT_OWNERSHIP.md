@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | Leon Nsitta | `components/entrance/`, `include/entrance/` | RFID access, schedule, inside list, entrance display/keypad/dashboard, integration |
 | Kato Trevor | `components/trevor/`, `components/rooms/`, `components/comms/`, `include/trevor/` | Room sensors/lights, off-delay, message protocol, queues, synchronization |
-| Kagimu Edward | `components/storage/`, `components/cli/`, `include/storage/`, `include/cli/` | SD event persistence and roster with NVS backup, serial queries and admin changes |
+| Kagimu Edward | `components/storage/`, `components/cli/`, `include/storage/`, `include/cli/` | SD event persistence, authoritative NVS roster with SD mirror, serial queries and admin changes |
 | Ahurira Grace | `components/actuator/`, `include/actuator/` | Access feedback LED and circuit/wiring documentation |
 
 `components/common/`, `components/auth/`, `include/common/`, and

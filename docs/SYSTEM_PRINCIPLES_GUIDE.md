@@ -92,7 +92,7 @@ The current inside list is in RAM, so it cannot by itself tell the system who
 remained in the building after a reboot.
 
 NVS is ESP32 non-volatile storage for small settings. This project stores the
-access schedule and a backup copy of the user roster there. The SD card holds
+access schedule and authoritative user roster there. The SD card holds
 the larger event log and a saved roster file. Both storage paths can fail; the
 firmware reports availability and keeps local access/light decisions running
 when the SD card is unavailable.

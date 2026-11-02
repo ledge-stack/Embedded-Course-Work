@@ -33,6 +33,9 @@ and [module integration guide](docs/MODULE_INTEGRATION_GUIDE.md). Separate
 [presentation guides](docs/presentations/README.md) are available for Leon,
 Trevor, Edward, and Grace.
 
+The [2 November fix verification](docs/FIX_VERIFICATION.md) records the direct
+keypad, dashboard, serial, schedule and roster corrections and their test results.
+
 ## Build and simulation
 
 This project uses PlatformIO's `esp32dev` environment with the ESP-IDF framework.
@@ -47,8 +50,8 @@ roles and do not start Leon's entrance pins. The demo joins `Wokwi-GUEST` and
 uses SNTP for the Kampala access schedule. Both entry and exit fail closed if
 time is unavailable or the schedule is closed. If no saved roster exists, the
 demo starts with UID `DE:AD:BE:EF`
-and `11:22:33:44`; admin roster changes are saved to the SD card with an NVS
-backup.
+and `11:22:33:44`; admin roster changes are committed to NVS with an optional
+SD mirror. NVS is authoritative when an older SD card is reinserted.
 The LCD shows entrance status, schedule, last event, and occupancy. Admins can
 change hours from the keypad (press `A`, enter demo PIN `2468`, then `#`) or the
 Wi-Fi dashboard; schedule changes persist in NVS and are also recorded in the

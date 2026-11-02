@@ -27,10 +27,10 @@ In the combined `TR_ROLE=0` build the startup order is:
 3. Start Trevor's room runtime. It creates room, coordinator, event-storage,
    and status tasks.
 4. Start Grace's feedback LED.
-5. Start Leon's entrance runtime and its RFID, clock, display, schedule, and
-   keypad tasks. The Wi-Fi dashboard is also started when network setup
-   succeeds.
-6. Load an SD/NVS saved user roster if available.
+5. Initialize Leon's entrance runtime, reader hardware, display and schedule.
+6. Load the saved roster (NVS first, legacy SD only when no NVS roster exists),
+   then start the RFID, clock, display, schedule and keypad tasks. Network setup
+   also starts the dashboard when it succeeds.
 7. Create the occupancy bridge task to pass entrance occupancy into room
    control every 250 ms.
 8. Start Edward's serial command task on UART0.
@@ -159,8 +159,8 @@ before this audit-row update, it remains in NVS, but its earlier change is not
 added retroactively to the SD history. Saving the schedule again creates a new
 audit row.
 
-The roster is different from the event log. It is stored as a binary roster on
-the SD card and backed up in NVS. The live list of people currently inside is
+The roster is different from the event log. It is committed to NVS and mirrored
+as a binary file on SD. NVS takes precedence over an older SD file. The live list of people currently inside is
 held in RAM and is not restored after reboot. The system therefore marks
 occupancy uncertain after restart until staff check the building.
 
@@ -169,7 +169,8 @@ occupancy uncertain after restart until staff check the building.
 `components/cli/runtime.c` reads text lines from UART0 at 115200 baud. It
 separates the first word as a command and then calls the module APIs to answer.
 For example, `rooms` reads Trevor's room snapshot and `records` asks storage to
-print the SD log. The read-only commands include `help`, `status`, `inside`,
+print approximately the last 2 KB of the SD log after releasing its mutex.
+The read-only commands include `help`, `status`, `inside`,
 `rooms`, `usage`, `users`, `records`, and `schedule`.
 
 `login 2468` creates a 60-second admin session. While it is active, `open

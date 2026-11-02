@@ -7,6 +7,7 @@
 #include "auth/runtime.h"
 #include "trevor/runtime.h"
 #include "actuator/runtime.h"
+#include "storage/runtime.h"
 #include "driver/gpio.h"
 #include "esp_event.h"
 #include "esp_log.h"
@@ -29,6 +30,7 @@
 static const char *TAG = "entrance";
 static entrance_state state;
 static SemaphoreHandle_t state_mutex;
+static SemaphoreHandle_t config_mutex;
 static EventGroupHandle_t wifi_events;
 static bool started;
 static volatile bool clock_ready;
@@ -370,7 +372,8 @@ esp_err_t entrance_runtime_start(void) {
     if (started)
         return ESP_ERR_INVALID_STATE;
     state_mutex = xSemaphoreCreateMutex();
-    if (!state_mutex)
+    config_mutex = xSemaphoreCreateMutex();
+    if (!state_mutex || !config_mutex)
         return ESP_ERR_NO_MEM;
     entrance_state_init(&state);
     /* The live inside list is not saved; require a physical empty-building check. */
@@ -384,6 +387,13 @@ esp_err_t entrance_runtime_start(void) {
     if (e != ESP_OK)
         return e;
     started = true;
+    /* Restore identities before starting any task that can accept a card. */
+    system_user saved_users[SYSTEM_MAX_USERS];
+    esp_err_t user_error = storage_runtime_load_users(saved_users);
+    if (user_error == ESP_OK) user_error = entrance_runtime_set_users(saved_users);
+    if (user_error != ESP_OK && user_error != ESP_ERR_NVS_NOT_FOUND)
+        ESP_LOGW(TAG, "saved roster unavailable/invalid; using demo users: %s",
+                 esp_err_to_name(user_error));
     if (xTaskCreate(clock_task, "entrance_clock", 4096, NULL, 3, NULL) != pdPASS)
         return ESP_ERR_NO_MEM;
     if (xTaskCreate(entrance_task, "entrance_rfid", 4096, NULL, 4, NULL) != pdPASS)
@@ -465,18 +475,24 @@ esp_err_t entrance_runtime_set_schedule(system_access_schedule schedule) {
         return ESP_ERR_INVALID_STATE;
     if (!entrance_schedule_valid(schedule))
         return ESP_ERR_INVALID_ARG;
+    /* Serialize the whole persisted update, not just the final RAM assignment. */
+    xSemaphoreTake(config_mutex, portMAX_DELAY);
     nvs_handle_t handle;
     esp_err_t e = nvs_open("access_cfg", NVS_READWRITE, &handle);
-    if (e != ESP_OK)
+    if (e != ESP_OK) {
+        xSemaphoreGive(config_mutex);
         return e;
+    }
     e = nvs_set_u16(handle, "start", schedule.start_minute);
     if (e == ESP_OK)
         e = nvs_set_u16(handle, "end", schedule.end_minute);
     if (e == ESP_OK)
         e = nvs_commit(handle);
     nvs_close(handle);
-    if (e != ESP_OK)
+    if (e != ESP_OK) {
+        xSemaphoreGive(config_mutex);
         return e;
+    }
     xSemaphoreTake(state_mutex, portMAX_DELAY);
     system_access_schedule previous = state.schedule;
     state.schedule = schedule;
@@ -487,6 +503,7 @@ esp_err_t entrance_runtime_set_schedule(system_access_schedule schedule) {
     uint64_t logged_utc = clock_ready && utc > 1760000000 ? (uint64_t)utc : 0;
     if (!tr_runtime_record_schedule_change(previous, schedule, logged_utc))
         ESP_LOGW(TAG, "schedule is saved in NVS, but its SD audit row was not confirmed");
+    xSemaphoreGive(config_mutex);
     return ESP_OK;
 }
 

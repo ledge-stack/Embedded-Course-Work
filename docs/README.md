@@ -15,6 +15,8 @@ and main feature list.
   outlines for Leon, Trevor, Edward, and Grace.
 - [Coursework completion plan](COURSEWORK_COMPLETION_PLAN.md): current
   implementation status, evidence collected, and remaining checks.
+- [2 November fix verification](FIX_VERIFICATION.md): direct code corrections,
+  fresh build/host test results, and remaining live demonstration checks.
 
 ## Guides for understanding the repository and code
 

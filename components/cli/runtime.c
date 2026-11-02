@@ -68,11 +68,13 @@ static void print_inside_and_users(bool show_users) {
 }
 
 static bool parse_time(const char *text, uint16_t *minute) {
-    unsigned hour = 0, part_minute = 0;
-    char extra;
-    if (sscanf(text, "%u:%u %c", &hour, &part_minute, &extra) != 2 || hour >= 24 ||
-        part_minute >= 60)
+    if (!text || strlen(text) != 5 || text[2] != ':' || text[0] < '0' || text[0] > '2' ||
+        text[1] < '0' || text[1] > '9' || text[3] < '0' || text[3] > '5' ||
+        text[4] < '0' || text[4] > '9')
         return false;
+    unsigned hour = (unsigned)(text[0] - '0') * 10u + (unsigned)(text[1] - '0');
+    unsigned part_minute = (unsigned)(text[3] - '0') * 10u + (unsigned)(text[4] - '0');
+    if (hour >= 24) return false;
     *minute = (uint16_t)(hour * 60u + part_minute);
     return true;
 }
@@ -173,8 +175,17 @@ static void delete_user(const char *argument) {
 
 static void handle_command(char *line) {
     /* Parse one command and its first argument, then call the matching handler. */
-    char command[16] = {0}, argument[40] = {0};
-    (void)sscanf(line, "%15s %39s", command, argument);
+    char command[16] = {0}, argument[40] = {0}, extra[40];
+    int fields = sscanf(line, "%15s %39s %39s", command, argument, extra);
+    if (fields < 1) return;
+    if (strcmp(command, "useradd")) {
+        bool needs_argument = !strcmp(command, "login") || !strcmp(command, "open") ||
+                              !strcmp(command, "close") || !strcmp(command, "userdel");
+        if (fields != (needs_argument ? 2 : 1)) {
+            puts("Unexpected or missing arguments. Type help.");
+            return;
+        }
+    }
     int64_t now = esp_timer_get_time() / 1000;
     if (admin_logged_in && now >= admin_session_end) {
         admin_logged_in = false;
@@ -238,7 +249,8 @@ static void handle_command(char *line) {
         }
     } else if (!strcmp(command, "useradd")) {
         char name[SYSTEM_NAME_MAX_BYTES] = {0}, uid[2 * SYSTEM_UID_MAX_BYTES + 1] = {0};
-        if (sscanf(line, "%*15s %23s %20s", name, uid) == 2)
+        char trailing;
+        if (sscanf(line, "%*15s %23s %20s %c", name, uid, &trailing) == 2)
             add_user(name, uid);
         else
             puts("Use useradd NAME UIDHEX.");
@@ -258,12 +270,30 @@ static void handle_command(char *line) {
 static void serial_task(void *arg) {
     (void)arg;
     char line[96];
+    size_t used = 0;
+    bool overflow = false;
     print_help();
-    while (fgets(line, sizeof(line), stdin)) {
-        handle_command(line);
-        memset(line, 0, sizeof(line));
+    while (true) {
+        int ch = getchar();
+        if (ch == EOF) {
+            clearerr(stdin);
+            vTaskDelay(pdMS_TO_TICKS(20));
+            continue;
+        }
+        if (ch == '\r' || ch == '\n') {
+            if (overflow) puts("Command too long; discarded.");
+            else if (used) {
+                line[used] = 0;
+                handle_command(line);
+            }
+            used = 0;
+            overflow = false;
+        } else if ((ch == 8 || ch == 127) && used && !overflow) used--;
+        else if (ch >= 32 && ch <= 126 && !overflow) {
+            if (used < sizeof(line) - 1) line[used++] = (char)ch;
+            else overflow = true;
+        }
     }
-    vTaskDelete(NULL);
 }
 
 esp_err_t cli_runtime_start(void) {

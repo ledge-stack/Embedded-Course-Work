@@ -147,9 +147,8 @@ static void handle_key(char key) {
             xSemaphoreGive(ui_mutex);
             return;
         }
-        char masked[8] = "PIN: ";
-        for (size_t i = 0; i < input_size; i++)
-            strcat(masked, "*");
+        char masked[10] = "PIN: ";
+        snprintf(masked, sizeof(masked), "PIN: %.*s", (int)input_size, "****");
         screen_set("ADMIN LOGIN", masked, "# confirms  * clears", "D cancels");
         xSemaphoreGive(ui_mutex);
         return;
