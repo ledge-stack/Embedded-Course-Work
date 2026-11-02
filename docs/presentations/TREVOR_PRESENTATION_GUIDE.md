@@ -41,7 +41,7 @@ building-empty safety input and the room-light usage counters.
 ## Suggested live demonstration
 
 1. Activate Room 1's PIR in the Wokwi diagram and show its light output turn on.
-2. Stop motion and show the five-second default off-delay.
+2. Stop motion and explain the two-minute default off-delay.
 3. If time permits, operate the link switch and point to retry/stale status in
    the serial output. Local room control should continue.
 4. Show the `usage` command and explain that it reports durations since boot,

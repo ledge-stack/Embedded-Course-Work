@@ -104,7 +104,7 @@ only, not production authentication.
 This is Trevor's pre-existing subsystem, included in the combined firmware.
 Trigger each PIR sensor and observe its matching room LED. Motion turns the
 light on immediately; after motion ends, the light stays on for the configured
-five-second off-delay. Move the link switch left to interrupt Trevor's logical
+two-minute off-delay. Move the link switch left to interrupt Trevor's logical
 room/coordinator queues, then right to restore them.
 
 The firmware forces room lights off only when the entrance count is confirmed

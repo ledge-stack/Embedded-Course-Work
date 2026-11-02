@@ -273,7 +273,7 @@ IoT Gateway for access from a host browser.
 
 Trevor's room runtime creates a task for each room. The task samples its PIR
 input, updates the room state, and controls only that room's light output.
-Motion turns the light on. When motion stops, a five-second off-delay keeps the
+Motion turns the light on. When motion stops, a two-minute off-delay keeps the
 light on; renewed motion restarts the delay. The off-delay is configurable in
 the room runtime, with a maximum of one hour.
 
