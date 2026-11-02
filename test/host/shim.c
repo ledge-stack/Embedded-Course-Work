@@ -78,6 +78,26 @@ int xTaskCreate(void (*fn)(void *), const char *name, unsigned stack, void *arg,
     CloseHandle(thread);
     return 1;
 }
+TaskHandle_t xTaskGetCurrentTaskHandle(void) {
+    return NULL;
+}
+TickType_t xTaskGetTickCount(void) {
+    return (TickType_t)GetTickCount();
+}
+int xTaskNotify(TaskHandle_t task, uint32_t value, int action) {
+    (void)task;
+    (void)value;
+    (void)action;
+    return 0;
+}
+int xTaskNotifyWait(uint32_t clear_on_entry, uint32_t clear_on_exit, uint32_t *value,
+                    unsigned timeout) {
+    (void)clear_on_entry;
+    (void)clear_on_exit;
+    (void)value;
+    (void)timeout;
+    return 0;
+}
 void vTaskDelay(unsigned ticks) {
     Sleep(ticks);
 }

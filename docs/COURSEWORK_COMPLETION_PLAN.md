@@ -37,8 +37,11 @@ from simulation evidence. Folder ownership is also listed in
 
 - Shared SPI2 bus initialization for the RFID readers and microSD card.
 - SD mount attempt and append-only CSV event log at `/sdcard/events.csv` for
-  access and room events. Missing-card or write failures are counted and do not
-  stop local room control.
+  access and room events. New access rows include person and Kampala time, and
+  schedule changes add an old/new-hours audit row. Access and schedule events
+  wait for the storage worker's flush/sync result. Missing-card or write
+  failures are counted and do not stop local control; the active schedule is
+  saved independently in NVS.
 - Registered-user roster saved to SD with an NVS backup and loaded at startup.
 - UART0 commands: `help`, `status`, `inside`, `rooms`, `usage`, `users`, `records`,
   `schedule`, `login PIN`, and `logout`. A 60-second admin session is required
@@ -82,11 +85,18 @@ Local evidence from this update:
   green demo card's entry and exit during open hours, returned occupancy to
   zero, and wrote both access records into `sdcard/events.csv`. It completed
   successfully with the final GPIO12 pulldown wiring in the diagram.
+- The after-hours Wokwi scenario also passed: the ESP32 booted, joined Wi-Fi,
+  synchronized time, mounted the SD card, read the registered UID
+  `11223344`, and correctly denied entry while the schedule was closed. It
+  then read and denied the unknown UID `AABBCCDD`.
+- The current access/schedule CSV format and storage-completion acknowledgement
+  compile in all four PlatformIO environments. The updated readable rows and
+  survival of records through a power cycle have not yet been demonstrated in
+  Wokwi.
 - The expanded `presentation-smoke.yaml` scenario adds repeat-entry and
-  unknown-card assertions. A 1 November CLI attempt connected to the Wokwi
-  simulation API, then the transport closed with WebSocket code 1006 before
-  serial assertions completed. Treat the earlier entry/exit scenario as the
-  confirmed Wokwi evidence; the expanded checks remain unverified.
+  unknown-card assertions. Its current run remains unverified because the
+  synchronized Wokwi clock was after closing time, so its grant assertion was
+  denied by the configured schedule.
 - Roster management, serial CLI actions, empty-building light shutdown, visual
   LED feedback, SD-full/recovery and reboot scenarios are not yet demonstrated.
 

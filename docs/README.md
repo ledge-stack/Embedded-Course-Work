@@ -1,63 +1,48 @@
 # Documentation guide
 
-Start with the root [README](../README.md) for the project summary, build
-command, demo credentials, and current high-level scope. This page points to
-the detailed material by task.
+Use this index to find the current coursework and presentation material. The
+root [README](../README.md) has the project summary, build command, demo PIN,
+and main feature list.
 
-## Build, run, and explain the system
+## Main presentation and submission documents
 
-- [Presentation demo](PRESENTATION_DEMO.md): how to start the one-board Wokwi
-  demo and steps for showing RFID, schedule, room, CLI, and storage features.
-- [System presentation guide](SYSTEM_PRESENTATION_GUIDE.md): end-to-end system
-  explanation, folder purposes, GPIO wiring, FreeRTOS tasks, queues, mutexes,
-  logs, and module interactions.
-- [System operation report](SYSTEM_OPERATION_REPORT.md): coursework report with
-  architecture, hardware, operation, implementation areas, member details,
-  and verification limits.
-- [Interface and pin contract](INTERFACES.md): shared data ownership, APIs,
-  access rules, GPIO assignments, and SPI/I2C/UART connections.
-- [Coursework completion plan](COURSEWORK_COMPLETION_PLAN.md): implemented
-  work, evidence collected, known limits, and checks still required.
+- [System operation report](SYSTEM_OPERATION_REPORT.md): the coursework report
+  covering purpose, architecture, hardware, operation, contributions, and
+  evidence limits.
+- [Presentation demo](PRESENTATION_DEMO.md): a step-by-step demonstration
+  sequence for the one-ESP32 Wokwi circuit.
+- [Individual presentation guides](presentations/README.md): speaking
+  outlines for Leon, Trevor, Edward, and Grace.
+- [Coursework completion plan](COURSEWORK_COMPLETION_PLAN.md): current
+  implementation status, evidence collected, and remaining checks.
 
-## Ownership and individual contributions
+## Guides for understanding the repository and code
 
-- [Component ownership](COMPONENT_OWNERSHIP.md): member-to-folder mapping and
-  implementation/evidence boundaries.
-- [Leon implementation guide](LEON_IMPLEMENTATION_GUIDE.md): entrance code,
+- [Repository structure guide](REPOSITORY_STRUCTURE_GUIDE.md): explains the
+  purpose of the folders, including `components/`, `include/`, `lib/`, and
+  `scenarios/`.
+- [Code walkthrough](CODE_WALKTHROUGH.md): follows startup, RFID scans, room
+  lighting, administration, and storage through the source files.
+- [System principles guide](SYSTEM_PRINCIPLES_GUIDE.md): explains FreeRTOS
+  tasks, queues, mutexes, buses, persistence, authentication, and timing.
+- [Module integration guide](MODULE_INTEGRATION_GUIDE.md): explains which
+  module owns each piece of state and how the modules exchange information.
+- [Interfaces and pin contract](INTERFACES.md): records public APIs, shared
+  data, GPIO assignments, and bus wiring.
+- [Component ownership](COMPONENT_OWNERSHIP.md): maps member contributions to
+  code areas and their evidence boundaries.
+
+## Member code references
+
+- [Leon implementation guide](LEON_IMPLEMENTATION_GUIDE.md): entrance access,
   schedule, RFID, display, keypad, dashboard, and integration.
-- [Leon work summary](LEON_WORK.md): concise contribution record.
-- [Leon report section](LEON_REPORT_SECTION.md): draft text for the coursework
-  report; the author should review it before submission.
-- [Entrance safety design](LEON_ENTRANCE_SAFETY_DESIGN.md): anti-passback,
-  uncertainty, simulated tailgate marker, roll-call, and limits.
 - [Trevor implementation guide](TREVOR_GUIDE.md): room control, protocol,
-  FreeRTOS ownership, retries, and verification steps.
-- [Trevor design](TREVOR_DESIGN.md): architecture and one-chip simulation
-  boundary.
-- [Original implementation plan](IMPLEMENTATION_PLAN.md): historical issue
-  order and branch/review expectations; not the current status checklist.
-- [Trevor verification record](TREVOR_VERIFICATION.md): historical evidence
-  from the original subsystem checks.
+  FreeRTOS synchronization, storage handoff, and diagnostics.
 
-Short README files beside source folders identify the responsible member and
-the purpose of each module. The old Trevor implementation checklist was
-removed because its completed steps duplicated the source tree and current
-completion record.
+Source folders also contain short README files describing each module.
+Portable host-check instructions are in [`../test/README`](../test/README).
 
-## Verification and remaining work
-
-The completion plan is the current status source. The Trevor verification
-record documents earlier subsystem-specific checks; it is historical evidence,
-not a replacement for current end-to-end acceptance. A local build or host test
-does not prove a public Wokwi run, physical multi-board wiring, reboot recovery,
-or submission completeness.
-
-Portable C test commands and the Windows adapter-test command are in
-[`../test/README`](../test/README). The test runner uses Trevor's current source
-path under `components/trevor/`.
-
-The lecturer accepts a Google Drive or GitHub link for submission; a published
-Wokwi link is optional supporting evidence. Before submission, complete the
-remaining checks listed in the completion plan, review each member's
-contribution statement, and include the report, videos, and project files in
-the Drive/GitHub destination.
+The lecturer accepts a GitHub or Google Drive link for the submission; a
+published Wokwi link is optional supporting evidence. Confirm each member's
+identification details and review the remaining checks in the completion plan
+before submitting.

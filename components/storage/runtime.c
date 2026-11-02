@@ -10,6 +10,9 @@
 #include "nvs.h"
 #include <inttypes.h>
 #include <stdio.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 #define CARD_MOUNT_POINT "/sdcard"
 #define EVENT_FILE CARD_MOUNT_POINT "/events.csv"
@@ -28,6 +31,87 @@ static sdmmc_card_t *card;
 static volatile bool ready;
 static bool spi_ready;
 static SemaphoreHandle_t file_mutex;
+
+static uint32_t read_u32_le(const uint8_t *bytes) {
+    return (uint32_t)bytes[0] | ((uint32_t)bytes[1] << 8) | ((uint32_t)bytes[2] << 16) |
+           ((uint32_t)bytes[3] << 24);
+}
+
+static uint64_t read_u64_le(const uint8_t *bytes) {
+    uint64_t value = 0;
+    for (unsigned i = 0; i < 8; i++)
+        value |= (uint64_t)bytes[i] << (8 * i);
+    return value;
+}
+
+static void format_local_time(uint64_t utc_seconds, char text[24]) {
+    if (!utc_seconds) {
+        snprintf(text, 24, "TIME_UNAVAILABLE");
+        return;
+    }
+    time_t utc = (time_t)utc_seconds;
+    struct tm local = {0};
+    if (!localtime_r(&utc, &local) || !strftime(text, 24, "%Y-%m-%d %H:%M:%S EAT", &local))
+        snprintf(text, 24, "TIME_UNAVAILABLE");
+}
+
+static const char *access_point_name(uint8_t point) {
+    return point == SYSTEM_ENTRY ? "ENTRY" : point == SYSTEM_EXIT ? "EXIT" : "UNKNOWN_POINT";
+}
+
+static const char *access_result_name(uint8_t result) {
+    switch (result) {
+    case SYSTEM_ACCESS_GRANTED:
+        return "GRANTED";
+    case SYSTEM_ACCESS_UNKNOWN_USER:
+        return "UNKNOWN_USER";
+    case SYSTEM_ACCESS_ALREADY_INSIDE:
+        return "ALREADY_INSIDE";
+    case SYSTEM_ACCESS_NOT_INSIDE:
+        return "NOT_INSIDE";
+    case SYSTEM_ACCESS_SCHEDULE_CLOSED:
+        return "SCHEDULE_CLOSED";
+    case SYSTEM_ACCESS_CLOCK_UNAVAILABLE:
+        return "CLOCK_UNAVAILABLE";
+    case SYSTEM_ACCESS_STALE_EVENT:
+        return "STALE_EVENT";
+    default:
+        return "UNKNOWN_RESULT";
+    }
+}
+
+static bool write_access_event(FILE *file, const tr_storage_event *event) {
+    const uint8_t *data = event->access_data;
+    if (event->access_size < 28 || event->access_size > 27 + SYSTEM_UID_MAX_BYTES)
+        return false;
+    uint8_t uid_size = data[26];
+    if (!uid_size || uid_size > SYSTEM_UID_MAX_BYTES || event->access_size != 27 + uid_size)
+        return false;
+
+    char timestamp[24], uid[2 * SYSTEM_UID_MAX_BYTES + 1];
+    format_local_time(read_u64_le(data + 8), timestamp);
+    for (unsigned i = 0; i < uid_size; i++)
+        snprintf(uid + i * 2, sizeof(uid) - i * 2, "%02X", data[27 + i]);
+    uid[uid_size * 2] = 0;
+
+    return fprintf(file, "ACCESS,%" PRIu32 ",%s,\"%s\",%s,%s,%s,%" PRIu32 ",%" PRIu32
+                         ",%" PRIu64 ",%" PRIu64 "\n",
+                   read_u32_le(data), timestamp, event->access_name,
+                   access_point_name(data[24]), access_result_name(data[25]), uid,
+                   read_u32_le(data + 4), event->inside_count, read_u64_le(data + 8),
+                   read_u64_le(data + 16)) > 0;
+}
+
+static bool write_schedule_event(FILE *file, const tr_storage_event *event) {
+    char timestamp[24];
+    format_local_time(event->schedule_utc_seconds, timestamp);
+    return fprintf(file, "SCHEDULE,%s,OPEN=%02u:%02u->%02u:%02u,CLOSE=%02u:%02u->%02u:%02u\n",
+                   timestamp, event->old_schedule.start_minute / 60,
+                   event->old_schedule.start_minute % 60,
+                   event->new_schedule.start_minute / 60, event->new_schedule.start_minute % 60,
+                   event->old_schedule.end_minute / 60, event->old_schedule.end_minute % 60,
+                   event->new_schedule.end_minute / 60, event->new_schedule.end_minute % 60) > 0;
+}
 
 esp_err_t storage_runtime_init_shared_spi(void) {
     if (spi_ready)
@@ -219,13 +303,13 @@ bool tr_storage_append(const tr_storage_event *event) {
                      (unsigned long long)event->received_ms, (unsigned)room->room, room->sequence,
                      (unsigned)room->occupied, (unsigned)room->light, room->off_delay_ms) > 0;
     } else if (event->kind == TR_EVENT_ACCESS) {
-        ok = fprintf(file, "ACCESS,%llu,", (unsigned long long)event->received_ms) > 0;
-        for (unsigned i = 0; ok && i < event->access_size; i++)
-            ok = fprintf(file, "%02X", event->access_data[i]) > 0;
-        if (ok)
-            ok = fputc('\n', file) != EOF;
+        ok = write_access_event(file, event);
+    } else if (event->kind == TR_EVENT_SCHEDULE) {
+        ok = write_schedule_event(file, event);
     }
     if (fflush(file) != 0)
+        ok = false;
+    if (fsync(fileno(file)) != 0)
         ok = false;
     if (fclose(file) != 0)
         ok = false;

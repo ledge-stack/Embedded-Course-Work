@@ -88,7 +88,7 @@ Changed state is published once the pending delivery completes. A 2-second heart
 
 Boot counters are committed to NVS namespace `trevor_link`, key `boot`, before tasks start. NVS initialization/commit errors stop startup rather than reuse identifiers; the code never erases team NVS automatically. Comparisons use serial-number arithmetic and assume less than 2^31 increments between observations. If a board's NVS is erased or replaced, restart the coordinator as part of re-pairing, because its previous session history is no longer valid. Uptime is not wall-clock time; Edward supplies timestamps for permanent records.
 
-This is **eventual synchronization of latest room state**, not guaranteed delivery of every intermediate transition or a durable event journal. During outages, intermediate changes can be coalesced. Access records are handed directly to the storage queue by Leon's module; remote access-event transport and schedule replication are not defined by this room protocol. Agree those extensions with the team before integration.
+This is **eventual synchronization of latest room state**, not guaranteed delivery of every intermediate transition or a durable room-event journal. During outages, intermediate changes can be coalesced. Access records are handed to the local storage queue by Leon's module and wait for a local SD write result; remote access-event transport and schedule replication are not defined by this room protocol. Agree those extensions with the team before integration.
 
 ## Light-use report
 
@@ -104,7 +104,7 @@ lamp wattage they must not be presented as kWh or an electricity bill.
 
 Edward's `components/storage/runtime.c` provides the strong `tr_storage_append(const tr_storage_event *)` implementation for the combined demo. Exactly one Trevor task invokes it; successful return means the event was flushed to the SD file. `storage_unwritten` counts failed/unavailable writes. `storage_queue_drop` counts rejected queue admissions. These counters reset on reboot; failed events are not retained for retry. Edward's CLI record reads and roster writes use the same filesystem mutex. The entry/exit scenario verified SD event writes; roster persistence, full-card handling and recovery still need Wokwi checks.
 
-Leon can enqueue up to 48 bytes of an access event through `tr_runtime_record_access(data, length)`. A true return means queued, not durably stored. On false, the caller must retry or report loss. The concurrency test launches two independent producers, deliberately fills the queue, retries rejected admissions and checks that all 200 records reach a non-overlapping storage callback. It also injects a callback failure and checks the diagnostic counter. Building-wide occupancy and schedule ownership remain with Leon; this module does not create competing versions of that shared state.
+The entrance submits access events through `tr_runtime_record_access_durable()`. It waits up to five seconds for the storage worker to report the SD write result. Room events remain asynchronous so room-control tasks do not wait for file writes. Schedule-change audit events use the same queue and writer. Building-wide occupancy and schedule ownership remain with Leon; this module does not create competing copies of that state.
 
 ## Manual demonstration checklist
 

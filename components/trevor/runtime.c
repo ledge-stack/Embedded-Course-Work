@@ -36,6 +36,7 @@ static tr_system_view shared;
 static uint32_t delays[2] = {TR_DEFAULT_OFF_DELAY_MS, TR_DEFAULT_OFF_DELAY_MS};
 static uint64_t last_ack[2];
 static uint32_t boot_session;
+static uint32_t storage_request_id;
 static bool started;
 static bool building_count_known;
 static size_t building_inside_count;
@@ -118,11 +119,17 @@ static void storage_task(void *arg) {
     tr_storage_event event;
     /* One task writes all events, so two room tasks cannot write together. */
     while (true) {
-        if (xQueueReceive(storage_queue, &event, portMAX_DELAY) == pdTRUE &&
-            !tr_storage_append(&event)) {
-            lock();
-            shared.storage_write_failures++;
-            unlock();
+        if (xQueueReceive(storage_queue, &event, portMAX_DELAY) == pdTRUE) {
+            bool saved = tr_storage_append(&event);
+            if (!saved) {
+                lock();
+                shared.storage_write_failures++;
+                unlock();
+            }
+            if (event.completion_task) {
+                uint32_t reply = (event.request_id << 1) | (saved ? 1u : 0u);
+                (void)xTaskNotify(event.completion_task, reply, eSetValueWithOverwrite);
+            }
         }
     }
 }
@@ -133,6 +140,61 @@ bool tr_runtime_record_access(const void *data, size_t size) {
         .kind = TR_EVENT_ACCESS, .received_ms = now_ms(), .access_size = (uint8_t)size};
     memcpy(event.access_data, data, size);
     return enqueue_storage(&event);
+}
+
+static bool enqueue_storage_and_wait(tr_storage_event *event) {
+    if (!started || !event)
+        return false;
+    /* Discard an old completion before assigning this request a new ID. */
+    uint32_t ignored;
+    (void)xTaskNotifyWait(0, UINT32_MAX, &ignored, 0);
+    lock();
+    storage_request_id = (storage_request_id + 1u) & 0x7fffffffu;
+    if (!storage_request_id)
+        storage_request_id = 1;
+    event->request_id = storage_request_id;
+    unlock();
+    event->completion_task = xTaskGetCurrentTaskHandle();
+    if (!enqueue_storage(event))
+        return false;
+
+    TickType_t started_at = xTaskGetTickCount();
+    const TickType_t timeout = pdMS_TO_TICKS(5000);
+    while (true) {
+        TickType_t elapsed = xTaskGetTickCount() - started_at;
+        if (elapsed >= timeout)
+            return false;
+        uint32_t reply = 0;
+        if (xTaskNotifyWait(0, UINT32_MAX, &reply, timeout - elapsed) != pdTRUE)
+            return false;
+        if ((reply >> 1) == event->request_id)
+            return (reply & 1u) != 0;
+        /* A timed-out earlier write may finish late; ignore its reply. */
+    }
+}
+
+bool tr_runtime_record_access_durable(const void *data, size_t size, const char *name,
+                                      size_t inside_count) {
+    if (!data || !size || size > sizeof(((tr_storage_event *)0)->access_data))
+        return false;
+    tr_storage_event event = {.kind = TR_EVENT_ACCESS,
+                              .received_ms = now_ms(),
+                              .access_size = (uint8_t)size,
+                              .inside_count = (uint32_t)inside_count};
+    memcpy(event.access_data, data, size);
+    if (name)
+        snprintf(event.access_name, sizeof(event.access_name), "%s", name);
+    return enqueue_storage_and_wait(&event);
+}
+
+bool tr_runtime_record_schedule_change(system_access_schedule before,
+                                       system_access_schedule after, uint64_t utc_seconds) {
+    tr_storage_event event = {.kind = TR_EVENT_SCHEDULE,
+                              .received_ms = now_ms(),
+                              .schedule_utc_seconds = utc_seconds,
+                              .old_schedule = before,
+                              .new_schedule = after};
+    return enqueue_storage_and_wait(&event);
 }
 bool tr_runtime_snapshot(tr_system_view *out) {
     if (!started || !out)

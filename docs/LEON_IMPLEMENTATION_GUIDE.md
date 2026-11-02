@@ -18,8 +18,8 @@ presentation build without owning the same pins or state.
 - Keep the code simple: each module has one job, entrance state has one owner,
   and other modules use the entrance API instead of editing that state.
 - Leon's anti-passback alert, simulation-only tailgate marker and read-only
-  evacuation report are implemented in firmware; the safe-feedback design
-  and its limits are in [`LEON_ENTRANCE_SAFETY_DESIGN.md`](LEON_ENTRANCE_SAFETY_DESIGN.md).
+  evacuation report are implemented in firmware; see the system operation
+  report for their behavior and limits.
 
 ## How the modules fit together
 
@@ -73,7 +73,7 @@ command interfaces that use those APIs.
 | Manage registered users | Edward's storage runtime loads and saves the roster, then calls `entrance_runtime_set_users()`. | Array indexes are stable user IDs. The entrance runtime remains the only owner of the live inside list and rejects a roster update that removes or replaces a person still inside. |
 | Add serial status and record commands | The command layer is implemented in `components/cli/`. It reads entrance and room status through their public APIs. | Use the existing USB serial console (UART0); do not install a second UART0 driver. Trevor uses UART1/2 only in separate physical-role builds. |
 | Require admin login for serial changes | The CLI uses the shared `components/auth/` verifier also used by the keypad and Wi-Fi page. | Keep one demo credential and lockout policy for all three interfaces; do not add a second PIN check in the CLI. |
-| Persist schedule and other settings | The schedule API currently saves hours to NVS namespace `access_cfg`. Coordinate with Leon before moving persistence to SD. | Keep one authoritative schedule and one write API. Do not add a second schedule copy to the CLI, SD layer, keypad or dashboard. |
+| Persist schedule and its audit trail | The schedule API saves active hours to NVS namespace `access_cfg` and queues an old/new schedule audit row to the SD event log. | Keep one authoritative schedule and one write API. NVS remains the boot-time source of active hours; the SD row is the history record. |
 | Choose an innovation feature | The repository now contains the safety bundle, feedback LED, empty-building light shutoff, room-link recovery, and room-light usage report. | Record which implemented feature or bundle the team will present as its formal innovation. |
 
 Leon added the current PIN verifier only to make the presentation keypad and
@@ -84,10 +84,9 @@ Keep the authorship of each module explicit in commits and the report.
 
 ## What Leon is responsible for
 
-The coursework plan assigns Leon the shared system interfaces, the combined
-circuit and module setup, entrance access, occupancy, schedule, integration,
-report coordination, and final release coordination (issues #1-3, #5-7, #15-16,
-and #18 in `docs/IMPLEMENTATION_PLAN.md`). Keep each item demonstrable:
+Leon is responsible for the shared system interfaces, the combined circuit and
+module setup, entrance access, occupancy, schedule, and integration. Keep each
+item demonstrable:
 
 1. **Shared contract:** define who owns each value, its units, and how other
    modules read or update it. The entrance runtime owns the people-inside list
@@ -185,9 +184,10 @@ initialize a second driver on an already initialized bus.
   under namespace `trevor_link`; Leon stores hours under `access_cfg`. Keep
   these names separate. Never erase NVS during a module restart or schedule
   update because that would delete the other module's settings too.
-- Entrance events go through `tr_runtime_record_access()`. A successful return
-  means queued, not saved to the SD card. Do not write SD data directly from an
-  RFID, keypad, or dashboard task.
+- Entrance access events use `tr_runtime_record_access_durable()`. It queues
+  the event and waits up to five seconds for the storage worker to report its
+  SD write result. Do not write SD data directly from an RFID, keypad, or
+  dashboard task.
 - FreeRTOS tasks share one CPU. Keep loops delayed, use the module's mutex/API
   for shared state, and do not add long waits while holding a mutex.
 

@@ -104,7 +104,7 @@ static void clock_task(void *arg) {
     }
 }
 
-static void save_event(system_access_event *event) {
+static void save_event(system_access_event *event, const char *name, size_t inside_count) {
     /* Stable compact encoding: no compiler padding, UID bytes are the only credential material
      * logged. */
     /* Pack the fields one by one so the saved record has no compiler padding. */
@@ -125,8 +125,8 @@ static void save_event(system_access_event *event) {
     bytes[25] = (uint8_t)event->result;
     bytes[26] = event->uid_size;
     memcpy(bytes + 27, event->uid, event->uid_size);
-    if (!tr_runtime_record_access(bytes, 27u + event->uid_size))
-        ESP_LOGW(TAG, "storage queue full; event %" PRIu32 " not queued", event->event_id);
+    if (!tr_runtime_record_access_durable(bytes, 27u + event->uid_size, name, inside_count))
+        ESP_LOGE(TAG, "access event %" PRIu32 " was not confirmed on SD card", event->event_id);
 }
 
 static void load_schedule(void) {
@@ -259,7 +259,9 @@ static void process_scan(uint8_t reader, const uint8_t *uid, uint8_t uid_size) {
                                  .uid_size = uid_size};
     memcpy(event.uid, uid, uid_size);
     size_t inside_count = entrance_inside_count(&state);
-    const char *name = user_id < SYSTEM_MAX_USERS ? state.users[user_id].display_name : "unknown";
+    char name[SYSTEM_NAME_MAX_BYTES];
+    snprintf(name, sizeof(name), "%s",
+             user_id < SYSTEM_MAX_USERS ? state.users[user_id].display_name : "unknown");
     bool granted = result == SYSTEM_ACCESS_GRANTED;
     last_event_valid = true;
     snprintf(last_person, sizeof(last_person), "%s", name);
@@ -287,7 +289,7 @@ static void process_scan(uint8_t reader, const uint8_t *uid, uint8_t uid_size) {
         ESP_LOGW(TAG, "ANTI-PASSBACK ALERT: this person is already recorded inside");
     else if (result == SYSTEM_ACCESS_NOT_INSIDE)
         ESP_LOGW(TAG, "EXIT WITHOUT ENTRY ALERT: this person is not recorded inside");
-    save_event(&event);
+    save_event(&event, name, inside_count);
     actuator_runtime_signal(granted);
 }
 
@@ -476,10 +478,15 @@ esp_err_t entrance_runtime_set_schedule(system_access_schedule schedule) {
     if (e != ESP_OK)
         return e;
     xSemaphoreTake(state_mutex, portMAX_DELAY);
+    system_access_schedule previous = state.schedule;
     state.schedule = schedule;
     xSemaphoreGive(state_mutex);
     ESP_LOGI(TAG, "access schedule saved: %02u:%02u-%02u:%02u", schedule.start_minute / 60,
              schedule.start_minute % 60, schedule.end_minute / 60, schedule.end_minute % 60);
+    time_t utc = time(NULL);
+    uint64_t logged_utc = clock_ready && utc > 1760000000 ? (uint64_t)utc : 0;
+    if (!tr_runtime_record_schedule_change(previous, schedule, logged_utc))
+        ESP_LOGW(TAG, "schedule is saved in NVS, but its SD audit row was not confirmed");
     return ESP_OK;
 }
 
