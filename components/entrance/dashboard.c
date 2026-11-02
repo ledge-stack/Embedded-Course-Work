@@ -70,7 +70,7 @@ static const char page[] =
     "let activity=document.querySelector('#activity');activity.replaceChildren();"
     "for(let e of s.recent){let li=document.createElement('li');"
     "let action=e.granted?(e.entering?'Welcome ':'Goodbye '):'Denied: ';"
-    "li.textContent=action+e.name+' ('+(e.entering?'entry':'exit')+' '+e.time+')';"
+    "li.textContent=action+e.call_name+' — '+e.name+' ('+(e.entering?'entry':'exit')+' '+e.time+')';"
     "activity.appendChild(li)}}"
     "async function save(e){e.preventDefault();let "
     "a=document.querySelector('#start').value,b=document.querySelector('#end').value;"
@@ -299,11 +299,14 @@ static esp_err_t status_handler(httpd_req_t *req) {
     fits = fits && append_format(response, sizeof(response), &used, "],\"recent\":[");
     for (size_t i = 0; fits && i < recent_count; i++) {
         char name[2 * SYSTEM_NAME_MAX_BYTES + 1];
+        char call_name[2 * SYSTEM_NAME_MAX_BYTES + 1];
         json_escape(name, sizeof(name), recent[i].name);
+        json_escape(call_name, sizeof(call_name), recent[i].call_name);
         fits = append_format(response, sizeof(response), &used,
-                             "%s{\"name\":\"%s\",\"entering\":%s,\"granted\":%s,"
-                             "\"time\":\"%s\"}",
-                             i ? "," : "", name, recent[i].entering ? "true" : "false",
+                             "%s{\"name\":\"%s\",\"call_name\":\"%s\","
+                             "\"entering\":%s,\"granted\":%s,\"time\":\"%s\"}",
+                             i ? "," : "", name, call_name,
+                             recent[i].entering ? "true" : "false",
                              recent[i].granted ? "true" : "false", recent[i].time);
     }
     fits = fits && append_format(response, sizeof(response), &used, "]}");

@@ -91,7 +91,8 @@ entry.
 - In public mode, `A` opens PIN entry, `B` marks a simulated tailgate alert,
   and `C` prints a read-only roll-call to the serial console.
 - Enter `2468` and press `#` to log in. In the admin menu, `1` sets the opening
-  time and `2` sets the closing time.
+  time, `2` sets the closing time, `3` pages through registered people and
+  their current inside state, and `4` pages through the latest access attempts.
 - Enter the new time as four digits in `HHMM` form and press `#`; for example,
   `0730` means 7:30. `*` clears input and `D` cancels or logs out.
 - The schedule API validates the value, saves accepted hours to NVS, updates
@@ -106,8 +107,16 @@ reduce wait time in the simulator. This is a demo security control, not a
 production credential system.
 
 The Wi-Fi page in `components/entrance/dashboard.c` uses the same shared PIN
-and schedule API. For browser access to a Wokwi ESP32 web server, the Wokwi
-Private IoT Gateway is required.
+and schedule API. After sign-in it shows the registered people and their
+current state, together with recent access activity. For browser access to a
+Wokwi ESP32 web server, the Wokwi Private IoT Gateway is required.
+
+With the default roster, Blue belongs to Leon Nsitta Kalungi, Green to Kato
+Trevor, Yellow to Kagimu Edward, and Red to Ahurira Grace. The LCD uses the
+short call names Leon, Trevor, Edward, and Grace for welcome and goodbye
+messages. The dashboard and keypad show up to eight latest scans from the
+current boot; the full persistent event log is viewed with the serial `records`
+command.
 
 ## 5. How each room controls its light
 

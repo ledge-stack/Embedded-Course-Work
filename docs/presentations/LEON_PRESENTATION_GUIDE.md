@@ -114,10 +114,12 @@ Wi-Fi code.
 - `entrance_apply_scan()` creates the next event number and passes the scan to
   the same decision function.
 
-The four demo cards on a clean install map to the group: Blue
-(`DE:AD:BE:EF`) is Leon, Green (`11:22:33:44`) is Kato Trevor, Yellow
+The four cards on a clean install map to the group: Blue (`DE:AD:BE:EF`) is
+Leon Nsitta Kalungi, Green (`11:22:33:44`) is Kato Trevor, Yellow
 (`55:66:77:88`) is Kagimu Edward, and Red (`AA:BB:CC:DD`) is Ahurira Grace.
-The roster can later be managed and saved by Edward's storage and CLI modules.
+The short display names are Leon, Trevor, Edward, and Grace. A successful scan
+briefly shows `Welcome <name>` at entry or `Goodbye <name>` at exit. The roster
+can later be managed and saved by Edward's storage and CLI modules.
 
 ### C. `components/entrance/runtime.c` — connect the pieces
 
@@ -182,6 +184,12 @@ hours, the last result, inside count, occupancy uncertainty, or an after-hours
 alert. “Waiting for RFID...” means no new card result has been displayed yet;
 it does not itself mean the reader is broken. A card tap should produce a log
 entry and update the display if a reader detected it.
+
+After an administrator signs in with `A` and PIN `2468`, menu option `3` shows
+the registered people and their current inside state, and option `4` pages
+through up to eight latest scan attempts. The signed-in dashboard shows the
+same roster and recent activity. This short list resets on reboot; the full
+event archive is stored on SD and read with the serial `records` command.
 
 ### F. `components/entrance/dashboard.c` and the shared admin APIs
 
@@ -290,17 +298,18 @@ time. Have the demo UIDs and the current simulated time in mind.
    inside count. If it says `TIME SYNC...`, wait for SNTP before scanning.
 2. **Show one successful entry.** Tap an enabled demo card at the entry
    reader during the open window. Blue is Leon, Green is Trevor, Yellow is
-   Edward, and Red is Grace. The LCD briefly says `Welcome Leon` (or that
-   cardholder's first name) and updates the count.
+   Edward, and Red is Grace. The LCD briefly says `Welcome` plus that member's
+   call name and updates the count.
 3. **Show anti-passback.** Tap the same card at entry again without exiting.
    Explain why the second scan is denied and the count remains unchanged.
 4. **Show the exit path.** Tap that card at the exit reader. The LCD briefly
-   says `Goodbye` and the person's first name; explain that the inside count
+   says `Goodbye` and the person's call name; explain that the inside count
    returns to its earlier value.
 5. **Show the admin roster and activity lists.** Press `A`, enter PIN `2468`,
    then press `3` for the roster or `4` for recent scans. Use `A`/`B` to move
    between pages and `D` to return to the admin menu. The dashboard shows both
-   lists after sign-in.
+   lists after sign-in. It shows the roster's full names and current state; the
+   recent list includes up to eight scans from the current boot.
 6. **Show schedule administration if time permits.** Use `A`, PIN `2468`,
    `#`, then `2`; enter a valid closing time in `HHMM` format and press `#`.
    The LCD shows a checking message while authentication and saving happen.

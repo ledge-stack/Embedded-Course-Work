@@ -22,17 +22,19 @@ room-lights-off-at-zero rule.
 
 ## Demonstrate access and occupancy
 
-1. In the entry reader panel, choose Blue Card (UID `DE:AD:BE:EF`) for Leon and
-   tap it. If Kampala time is inside the configured window, the LCD welcomes
-   Leon and shows the time and inside count; serial reports `GRANTED`.
+1. In the entry reader panel, choose Blue Card (UID `DE:AD:BE:EF`) for Leon
+   Nsitta Kalungi and tap it. If Kampala time is inside the configured window,
+   the LCD says `Welcome Leon` and shows the time and inside count; serial
+   reports `GRANTED`.
 2. Present the same card at entry again. The LCD shows `DENIED` and count stays
    at 1 because anti-passback blocks a second entry.
 3. Present the card at the exit reader. The LCD says `Goodbye Leon` and the
    count returns to 0. Present it at exit again to demonstrate exit-without-entry
    denial.
-4. Green Card (`11:22:33:44`) is Kato Trevor, Yellow Card (`55:66:77:88`) is
-   Kagimu Edward, and Red Card (`AA:BB:CC:DD`) is Ahurira Grace. Use the Key
-   Fob preset (`C0:FF:EE:99`) or NFC Tag to demonstrate an unknown-card denial.
+4. The remaining member cards are Green (`11:22:33:44`), Kato Trevor; Yellow
+   (`55:66:77:88`), Kagimu Edward; and Red (`AA:BB:CC:DD`), Ahurira Grace.
+   Their LCD call names are Trevor, Edward, and Grace. Use the Key Fob preset
+   (`C0:FF:EE:99`) or NFC Tag to demonstrate an unknown-card denial.
 5. Present a known card outside the access schedule at both readers to show
    that entry and exit are denied. A denied exit leaves occupancy unchanged.
    At close, serial logs list any remaining occupants.
@@ -81,7 +83,9 @@ not unlock a door. Feature limits are in
    their current state (`IN`, `OUT`, or `OUT?` when occupancy needs checking).
    Press `A`/`B` to page forward/back and `D` to return to the menu.
 5. Press `4` to page through recent access attempts, newest first. It shows a
-   welcome, goodbye, or denial with the person's name and entry/exit time.
+   welcome, goodbye, or denial with the member's call name and entry/exit time.
+   The keypad and dashboard show up to eight scans from the current boot; the
+   full saved history is available with the serial `records` command.
 
 ## Change the schedule over Wi-Fi
 

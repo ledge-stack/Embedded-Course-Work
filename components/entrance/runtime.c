@@ -42,6 +42,26 @@ static entrance_access_record recent_access[ENTRANCE_RECENT_ACCESS_COUNT];
 static size_t recent_access_count;
 static size_t recent_access_next;
 
+/* Keep full roster names for records, and use familiar names on short displays. */
+static void make_call_name(const char *full_name, char *out, size_t capacity) {
+    const char *call_name = full_name;
+    if (!strcmp(full_name, "Kato Trevor"))
+        call_name = "Trevor";
+    else if (!strcmp(full_name, "Kagimu Edward"))
+        call_name = "Edward";
+    else if (!strcmp(full_name, "Ahurira Grace"))
+        call_name = "Grace";
+    if (call_name == full_name) {
+        size_t length = strcspn(full_name, " ");
+        if (length >= capacity)
+            length = capacity - 1u;
+        memcpy(out, full_name, length);
+        out[length] = 0;
+    } else {
+        snprintf(out, capacity, "%s", call_name);
+    }
+}
+
 static void wifi_handler(void *arg, esp_event_base_t base, int32_t id, void *data) {
     (void)arg;
     (void)data;
@@ -278,6 +298,7 @@ static void process_scan(uint8_t reader, const uint8_t *uid, uint8_t uid_size) {
     last_event_display_until_ms = mono + 4000u;
     entrance_access_record *record = &recent_access[recent_access_next];
     snprintf(record->name, sizeof(record->name), "%s", name);
+    make_call_name(name, record->call_name, sizeof(record->call_name));
     snprintf(record->time, sizeof(record->time), "%s", last_time);
     record->entering = point == SYSTEM_ENTRY;
     record->granted = granted;
@@ -356,12 +377,9 @@ static void display_task(void *arg) {
                     const char *greeting = !strcmp(status.last_action, "WELCOME") ? "Welcome"
                                            : !strcmp(status.last_action, "GOODBYE") ? "Goodbye"
                                                                                      : "Denied";
-                    char first_name[SYSTEM_NAME_MAX_BYTES];
-                    snprintf(first_name, sizeof(first_name), "%s", status.last_person);
-                    char *space = strchr(first_name, ' ');
-                    if (space)
-                        *space = 0;
-                    snprintf(rows[2], 21, "%s %.11s", greeting, first_name);
+                    char call_name[SYSTEM_NAME_MAX_BYTES];
+                    make_call_name(status.last_person, call_name, sizeof(call_name));
+                    snprintf(rows[2], 21, "%s %.11s", greeting, call_name);
                     if (status.occupancy_uncertain)
                         snprintf(rows[3], 21, "Inside %u - CHECK", (unsigned)status.inside_count);
                     else

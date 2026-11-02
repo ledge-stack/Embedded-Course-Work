@@ -25,8 +25,10 @@ On a clean install, the Wokwi RFID cards are assigned to these members:
 Leon implemented the entrance RFID readers, member card roster, access and
 anti-passback decisions, Kampala schedule, LCD, keypad, dashboard, roll-call,
 and roster API. Accepted entry and exit scans show a named welcome or goodbye;
-the LCD keypad and signed-in dashboard include roster status and recent access
-activity. Trevor's
+the LCD keypad and signed-in dashboard include each member's current roster
+status and up to eight recent scans. Those live lists reset at reboot; the SD
+card keeps the longer event history, which can be read with the serial
+`records` command. Trevor's
 room sensing, automatic lights, messaging, retries, FreeRTOS synchronization,
 serialized storage queue, and light-use counters live under `components/trevor/`.
 Edward's SD event

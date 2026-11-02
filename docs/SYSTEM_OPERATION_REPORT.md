@@ -58,7 +58,7 @@ functions for the CoCIS building. Its objectives are to:
 | Coursework requirement | Current implementation | Important boundary |
 | --- | --- | --- |
 | Automated access control | Entry and exit RFID scans are checked against the roster, inside list, clock, and schedule. | The indicators do not operate a real door lock. |
-| RFID identification | Two MFRC522 readers use separate chip-select pins on a shared SPI bus. | Demo UIDs are provided when no saved roster is available. |
+| RFID identification | Two MFRC522 readers use separate chip-select pins on a shared SPI bus. A clean roster assigns Blue to Leon Nsitta Kalungi, Green to Kato Trevor, Yellow to Kagimu Edward, and Red to Ahurira Grace. | A saved roster takes precedence; the default UIDs are for the Wokwi presentation. |
 | Occupancy monitoring | The entrance keeps a live list and count based on granted RFID transitions. | This is a logical count; it does not detect tailgating or independently count people. |
 | Intelligent room lighting | Two PIR/light channels use an off-delay and an empty-building override. | PIR reports motion, not room headcount. |
 | Data storage | Access and room events go to SD; roster and schedule are stored persistently. | Live inside state and runtime usage counters reset at reboot. |
@@ -226,10 +226,12 @@ Keypad `C` prints a read-only roll-call of names to the serial console.
 
 The LCD is a 20x4 display. It shows whether the building is open, the schedule,
 the most recent access result, and the recorded inside count. After an accepted
-entry it briefly shows `Welcome` and the person's first name; after an accepted
-exit it briefly shows `Goodbye` and their first name. A denied scan shows the
-name with a denial message. It also shows occupancy uncertainty after a reboot
-or simulated tailgate alert and an after-hours alert if people remain inside.
+entry it briefly shows `Welcome` and the person's call name; after an accepted
+exit it briefly shows `Goodbye` and their call name. The default call names are
+Leon, Trevor, Edward, and Grace, while the roster and saved records retain each
+member's full name. A denied scan shows the member's call name with a denial
+message. It also shows occupancy uncertainty after a reboot or simulated
+tailgate alert and an after-hours alert if people remain inside.
 
 Grace's blue LED receives a grant/deny signal from the entrance module. A
 granted scan produces a short pulse; a denied scan produces a longer pulse.
@@ -253,9 +255,12 @@ schedule API. The keypad flow is:
 
 After an access scan, the public LCD briefly welcomes a person who entered or
 says goodbye to someone who exited. The admin dashboard presents the full
-registered roster and recent scan activity. The keypad roster and activity
-views require the admin PIN. Recent activity in RAM resets at reboot; the SD
-event file keeps the longer access history when the card is available.
+registered roster, current `INSIDE`/`OUTSIDE`/`CHECK` state, and up to eight
+recent scans. On the keypad, option `3` pages through the roster and option `4`
+pages through those same recent scans. Both lists require keypad or dashboard
+authentication. Recent activity in RAM resets at reboot; the SD event file
+keeps the longer access history, which is available through the serial
+`records` command when the card is mounted.
 
 The serial CLI provides read-only commands for status, occupancy, rooms, light
 usage, users, event records, and schedule. After `login 2468`, an administrator
@@ -411,7 +416,7 @@ was synced without making the room-control task wait for storage.
 
 | Member | Contribution presented in this project | Main code area |
 | --- | --- | --- |
-| **Leon Nsitta Kalungi** | Project setup and integration; entry/exit RFID, access rules, anti-passback, inside tracking, Kampala schedule, time handling, LCD, keypad, dashboard, roll-call, and access-event handoff. | `components/entrance/`, `include/entrance/`, `src/main.c` |
+| **Leon Nsitta Kalungi** | Project setup and integration; entry/exit RFID, member card roster, named welcome/goodbye display, access rules, anti-passback, inside tracking, Kampala schedule, LCD, authenticated keypad and dashboard roster/activity views, roll-call, and access-event handoff. | `components/entrance/`, `include/entrance/`, `src/main.c` |
 | **Kato Trevor** | Two room PIR/light channels, off-delay, room protocol, sequence and checksum checks, acknowledgements, retries, synchronization diagnostics, bounded event queue, single storage worker, building-empty safety rule, and light-use counters. | `components/trevor/`, `include/trevor/` |
 | **Kagimu Edward** | Shared SPI and SD-card interface, event logging, roster file and NVS backup, UART0 query menu, records reader, and authenticated schedule/user administration. | `components/storage/`, `components/cli/`, `include/storage/`, `include/cli/` |
 | **Ahurira Grace** | Blue access-feedback LED interface with different pulse lengths for grants and denials, plus its wiring contract. | `components/actuator/`, `include/actuator/` |
@@ -443,6 +448,11 @@ basic card scanning and motion-triggered lights:
   tailgate sensor.
 - **Read-only evacuation roll-call:** keypad `C` prints the recorded names and
   count without exposing card UIDs.
+- **Named access feedback and administrator activity views:** the public LCD
+  greets a member by call name after a granted transition. Authenticated
+  administrators can inspect every roster member's current state and the
+  latest eight scans on the keypad or dashboard. The complete persistent event
+  archive stays on SD and can be read through the serial `records` command.
 - **Empty-building light override:** known-zero building occupancy forces both
   room light outputs off.
 - **Link recovery and diagnostics:** room messages use sequences,

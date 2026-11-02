@@ -149,7 +149,7 @@ static void show_activity_page(void) {
         const char *action = !record->granted ? "Denied:"
                              : record->entering ? "Welcome"
                                                 : "Goodbye";
-        snprintf(name, sizeof(name), "%s %.12s", action, record->name);
+        snprintf(name, sizeof(name), "%s %.12s", action, record->call_name);
         snprintf(detail, sizeof(detail), "%s %.5s %s", record->entering ? "ENTRY" : "EXIT",
                  record->time, record->granted ? "OK" : "DENIED");
     } else {

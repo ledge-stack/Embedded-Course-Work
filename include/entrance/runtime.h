@@ -23,7 +23,8 @@ typedef struct {
 
 #define ENTRANCE_RECENT_ACCESS_COUNT 8u
 typedef struct {
-    char name[SYSTEM_NAME_MAX_BYTES];
+    char name[SYSTEM_NAME_MAX_BYTES];      /* Full roster name for records. */
+    char call_name[SYSTEM_NAME_MAX_BYTES]; /* Short form for greetings. */
     char time[6];
     bool entering;
     bool granted;

@@ -1,6 +1,6 @@
 # Shared interfaces and terminal pin plan
 
-Version 1, updated 1 November 2026. This is the working contract for the combined
+Version 1, updated 2 November 2026. This is the working contract for the combined
 single-board Wokwi presentation simulation.
 All members should review it before extending the message protocol.
 
@@ -20,12 +20,19 @@ All members should review it before extending the message protocol.
   registered-user list. Array indexes are stable user IDs. The API rejects
   duplicate/invalid UIDs and refuses to remove or replace a user who is still
   recorded inside. It saves the roster to SD with an NVS backup; on a clean device the
-  presentation build begins with four member cards: Blue/Leon, Green/Trevor,
-  Yellow/Edward, and Red/Grace. Old default demo-user names are migrated to the
-  member names at startup.
+  presentation build begins with four member cards: Blue/Leon Nsitta Kalungi
+  (`DE:AD:BE:EF`), Green/Kato Trevor (`11:22:33:44`), Yellow/Kagimu Edward
+  (`55:66:77:88`), and Red/Ahurira Grace (`AA:BB:CC:DD`). For brief display and
+  activity messages, their call names are Leon, Trevor, Edward, and Grace.
+  Old default demo-user names are migrated to the member names at startup.
 - The public keypad reserves B for a simulation-only tailgate marker and C
   for a read-only evacuation roll-call. B marks occupancy uncertain but never
   edits the inside list; C prints names and count without card UIDs.
+- After keypad sign-in, menu option 3 pages through the registered roster and
+  current inside state; option 4 pages through the eight most recent scans in
+  this boot. The dashboard shows the same roster and recent activity after
+  sign-in. The complete saved event history remains available through the
+  serial `records` command, not these short live views.
 - entrance_runtime_set_schedule() is the shared schedule-write API for the
   keypad, dashboard, and Edward's authenticated serial commands. Callers
   must authenticate before invoking it. The entrance runtime validates and
