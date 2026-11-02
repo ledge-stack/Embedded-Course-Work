@@ -27,16 +27,22 @@ All members should review it before extending the message protocol.
 - entrance_runtime_set_schedule() is the shared schedule-write API for the
   keypad, dashboard, and Edward's authenticated serial commands. Callers
   must authenticate before invoking it. The entrance runtime validates and
-  persists accepted values in NVS.
+  persists accepted values in NVS, then asks the storage worker to append a
+  schedule-change audit row to SD. NVS remains the active schedule at boot; an
+  SD audit-write failure is reported separately.
 - Access state updates use nonzero 32-bit sequence IDs. entrance_apply_event
   applies only newer IDs and returns SYSTEM_ACCESS_STALE_EVENT for duplicate or
   out-of-order deliveries. The serial RFID task is the only event producer in
   this simulation; a remote access-event transport is not implemented.
-- Trevor's tr_runtime_record_access is a nonblocking handoff to the
-  serialized storage owner. true means queued, not durable. The compact
+- Room state uses a nonblocking handoff to the serialized storage owner. True
+  means queued, not durable. Entrance access records use
+  tr_runtime_record_access_durable(), which waits up to five seconds for the
+  storage worker to append, flush, sync, and close the SD file. The compact
   version-1 access payload is event ID (4 LE bytes), user ID (4 LE), UTC epoch
   (8 LE), monotonic milliseconds (8 LE), access point (1), result (1), UID
-  size (1), followed by UID bytes. Total size is 27-37 bytes.
+  size (1), followed by UID bytes. Total size is 28-37 bytes. New rows are
+  written in readable CSV form with Kampala time, name, direction, result,
+  UID, user ID, and inside count.
 - Room state and its UART protocol remain owned by Trevor. The current binary
   room frame is documented in docs/TREVOR_GUIDE.md; it is not reused as an
   access-event wire message. Remote occupancy/schedule replication still needs

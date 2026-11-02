@@ -20,10 +20,11 @@ ESP-IDF component paths continue to work.
 - Leon: two RFID readers, known-user access, anti-passback, inside count,
   configurable schedule, clock handling, keypad/dashboard, and event handoff.
 - Trevor: two room PIR/light channels, off-delay, room messaging, retries,
-  synchronization counters, event queue, serialized storage worker, and a
-  building-empty shutdown input from Leon.
+  synchronization counters, event queue, serialized storage worker,
+  building-empty shutdown input, and per-room light-use counters.
 - Edward: SD mount and CSV event append, SD/NVS registered-user roster, serial
-  status/read commands, and PIN-gated schedule and roster changes.
+  status/read commands (including Trevor's light-use report), and PIN-gated
+  schedule and roster changes.
 - Grace: one combined-board scan-feedback LED with distinct pulse durations for
   granted and denied scans. It is a visual simulation output, not a door lock.
 - Shared integration: one-ESP32 Wokwi topology, logical room queues, SPI sharing

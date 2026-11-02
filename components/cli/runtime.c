@@ -16,7 +16,8 @@ static int64_t admin_session_end;
 static const char *TAG = "edward_cli";
 
 static void print_help(void) {
-    printf("Commands: help, status, inside, rooms, users, records, schedule, login PIN, logout\n");
+    printf("Commands: help, status, inside, rooms, usage, users, records, schedule, login PIN, "
+           "logout\n");
     printf(
         "After login: open HH:MM, close HH:MM, useradd NAME UIDHEX, userdel ID, confirm-empty\n");
 }
@@ -32,6 +33,20 @@ static void print_status(void) {
         printf("Events: storage queue drops=%lu, writes failed=%lu\n",
                (unsigned long)system.storage_queue_drops,
                (unsigned long)system.storage_write_failures);
+}
+
+static void print_light_usage(void) {
+    tr_system_view system;
+    if (!tr_runtime_snapshot(&system))
+        return;
+    puts("Room light usage since this boot (time only; no kWh estimate):");
+    for (unsigned i = 0; i < 2; i++) {
+        uint64_t on_seconds = system.light_on_ms[i] / 1000;
+        uint64_t saved_seconds = system.empty_building_saved_ms[i] / 1000;
+        printf("Room %u: on %llu min %llu sec; prevented while building empty %llu min %llu sec\n",
+               i + 1, (unsigned long long)(on_seconds / 60), (unsigned long long)(on_seconds % 60),
+               (unsigned long long)(saved_seconds / 60), (unsigned long long)(saved_seconds % 60));
+    }
 }
 
 static void print_inside_and_users(bool show_users) {
@@ -181,7 +196,9 @@ static void handle_command(char *line) {
                 printf("Room %u: online=%u motion=%u light=%u delay=%lu ms\n", i + 1,
                        view.rooms[i].online, view.rooms[i].state.occupied,
                        view.rooms[i].state.light, (unsigned long)view.rooms[i].state.off_delay_ms);
-    } else if (!strcmp(command, "records"))
+    } else if (!strcmp(command, "usage"))
+        print_light_usage();
+    else if (!strcmp(command, "records"))
         storage_runtime_print_events(stdout);
     else if (!strcmp(command, "schedule")) {
         entrance_status status;

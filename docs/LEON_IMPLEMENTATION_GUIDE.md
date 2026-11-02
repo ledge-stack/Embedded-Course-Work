@@ -18,8 +18,8 @@ presentation build without owning the same pins or state.
 - Keep the code simple: each module has one job, entrance state has one owner,
   and other modules use the entrance API instead of editing that state.
 - Leon's anti-passback alert, simulation-only tailgate marker and read-only
-  evacuation report are implemented in firmware; the safe-feedback design
-  and its limits are in [`LEON_ENTRANCE_SAFETY_DESIGN.md`](LEON_ENTRANCE_SAFETY_DESIGN.md).
+  evacuation report are implemented in firmware; see the system operation
+  report for their behavior and limits.
 
 ## How the modules fit together
 
@@ -73,8 +73,8 @@ command interfaces that use those APIs.
 | Manage registered users | Edward's storage runtime loads and saves the roster, then calls `entrance_runtime_set_users()`. | Array indexes are stable user IDs. The entrance runtime remains the only owner of the live inside list and rejects a roster update that removes or replaces a person still inside. |
 | Add serial status and record commands | The command layer is implemented in `components/cli/`. It reads entrance and room status through their public APIs. | Use the existing USB serial console (UART0); do not install a second UART0 driver. Trevor uses UART1/2 only in separate physical-role builds. |
 | Require admin login for serial changes | The CLI uses the shared `components/auth/` verifier also used by the keypad and Wi-Fi page. | Keep one demo credential and lockout policy for all three interfaces; do not add a second PIN check in the CLI. |
-| Persist schedule and other settings | The schedule API currently saves hours to NVS namespace `access_cfg`. Coordinate with Leon before moving persistence to SD. | Keep one authoritative schedule and one write API. Do not add a second schedule copy to the CLI, SD layer, keypad or dashboard. |
-| Choose an innovation feature | Agree it with the team and record it before claiming it in the report. | Existing anti-passback is implemented by Leon, but the team has not recorded it as the approved innovation. |
+| Persist schedule and its audit trail | The schedule API saves active hours to NVS namespace `access_cfg` and queues an old/new schedule audit row to the SD event log. | Keep one authoritative schedule and one write API. NVS remains the boot-time source of active hours; the SD row is the history record. |
+| Choose an innovation feature | The repository now contains the safety bundle, feedback LED, empty-building light shutoff, room-link recovery, and room-light usage report. | Record which implemented feature or bundle the team will present as its formal innovation. |
 
 Leon added the current PIN verifier only to make the presentation keypad and
 dashboard work. Treat it as demo authentication, not Edward's finished
@@ -84,10 +84,9 @@ Keep the authorship of each module explicit in commits and the report.
 
 ## What Leon is responsible for
 
-The coursework plan assigns Leon the shared system interfaces, the combined
-circuit and module setup, entrance access, occupancy, schedule, integration,
-report coordination, and final release coordination (issues #1-3, #5-7, #15-16,
-and #18 in `docs/IMPLEMENTATION_PLAN.md`). Keep each item demonstrable:
+Leon is responsible for the shared system interfaces, the combined circuit and
+module setup, entrance access, occupancy, schedule, and integration. Keep each
+item demonstrable:
 
 1. **Shared contract:** define who owns each value, its units, and how other
    modules read or update it. The entrance runtime owns the people-inside list
@@ -124,14 +123,14 @@ and #18 in `docs/IMPLEMENTATION_PLAN.md`). Keep each item demonstrable:
 - Edward's serial roster manager calls `entrance_runtime_set_users()` and saves
   the roster on SD with an NVS backup. Access and room events use the SD event
   writer; roster editing and CLI commands still need interactive Wokwi checks.
-- The UART0 CLI provides queries and authenticated schedule/user operations.
+- The UART0 CLI provides queries, the read-only room-light `usage` report, and
+  authenticated schedule/user operations.
   The `2468` PIN and HTTP page remain presentation-only authentication.
 - Occupancy is volatile across reboot. The firmware marks it uncertain until
   an administrator confirms the building is empty after a physical check.
-- The team still needs to agree and record the innovation feature, publish and
-  run the Wokwi project, and complete the report/video/submission steps. The
-  anti-passback behavior exists, but do not label it the team's approved
-  innovation until the team records that decision.
+- The team still needs to record which implemented feature or bundle it will
+  present as its innovation. Follow the lecturer's current Google Drive or
+  GitHub submission-link instruction; a Wokwi link is optional.
 - Keypad `B` marks a simulated tailgate and keypad `C` prints a read-only
   evacuation roll-call to the serial monitor. Schedule close prints the same
   report as an after-hours alert. Grace's blue LED indicates scan results; no
@@ -185,9 +184,10 @@ initialize a second driver on an already initialized bus.
   under namespace `trevor_link`; Leon stores hours under `access_cfg`. Keep
   these names separate. Never erase NVS during a module restart or schedule
   update because that would delete the other module's settings too.
-- Entrance events go through `tr_runtime_record_access()`. A successful return
-  means queued, not saved to the SD card. Do not write SD data directly from an
-  RFID, keypad, or dashboard task.
+- Entrance access events use `tr_runtime_record_access_durable()`. It queues
+  the event and waits up to five seconds for the storage worker to report its
+  SD write result. Do not write SD data directly from an RFID, keypad, or
+  dashboard task.
 - FreeRTOS tasks share one CPU. Keep loops delayed, use the module's mutex/API
   for shared state, and do not add long waits while holding a mutex.
 

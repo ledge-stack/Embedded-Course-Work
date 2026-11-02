@@ -29,15 +29,21 @@ from simulation evidence. Folder ownership is also listed in
   snapshot and a single serialized event-storage worker.
 - In the one-board presentation build, room lights are forced off when Leon's
   known inside count is zero. Unknown count does not mean empty.
+- Per-room light-on time and time suppressed by the known-empty rule are
+  counted since boot and exposed through the serial `usage` command. These are
+  runtime-duration metrics, not measured energy or kWh.
 
 ### Kagimu Edward — storage and serial administration
 
 - Shared SPI2 bus initialization for the RFID readers and microSD card.
 - SD mount attempt and append-only CSV event log at `/sdcard/events.csv` for
-  access and room events. Missing-card or write failures are counted and do not
-  stop local room control.
+  access and room events. New access rows include person and Kampala time, and
+  schedule changes add an old/new-hours audit row. Access and schedule events
+  wait for the storage worker's flush/sync result. Missing-card or write
+  failures are counted and do not stop local control; the active schedule is
+  saved independently in NVS.
 - Registered-user roster saved to SD with an NVS backup and loaded at startup.
-- UART0 commands: `help`, `status`, `inside`, `rooms`, `users`, `records`,
+- UART0 commands: `help`, `status`, `inside`, `rooms`, `usage`, `users`, `records`,
   `schedule`, `login PIN`, and `logout`. A 60-second admin session is required
   for `open HH:MM`, `close HH:MM`, `useradd NAME UIDHEX`, and `userdel ID`.
 - User updates go through Leon's validation API. A user who is inside cannot
@@ -73,16 +79,24 @@ Local evidence from this update:
   was added; the three auxiliary SDK configs match the board's 4 MB flash size.
 - The portable entrance test passed for schedule enforcement at entry and exit,
   denied exit with unchanged occupancy, anti-passback, invalid exit and clock
-  failure. Trevor's portable core suite also passed.
+  failure. Trevor's portable core suite, including light-use time accounting,
+  also passed.
 - On 1 November, the Wokwi RFID scenario mounted the SD card, granted the
   green demo card's entry and exit during open hours, returned occupancy to
   zero, and wrote both access records into `sdcard/events.csv`. It completed
   successfully with the final GPIO12 pulldown wiring in the diagram.
+- The after-hours Wokwi scenario also passed: the ESP32 booted, joined Wi-Fi,
+  synchronized time, mounted the SD card, read the registered UID
+  `11223344`, and correctly denied entry while the schedule was closed. It
+  then read and denied the unknown UID `AABBCCDD`.
+- The current access/schedule CSV format and storage-completion acknowledgement
+  compile in all four PlatformIO environments. The updated readable rows and
+  survival of records through a power cycle have not yet been demonstrated in
+  Wokwi.
 - The expanded `presentation-smoke.yaml` scenario adds repeat-entry and
-  unknown-card assertions. A 1 November CLI attempt connected to the Wokwi
-  simulation API, then the transport closed with WebSocket code 1006 before
-  serial assertions completed. Treat the earlier entry/exit scenario as the
-  confirmed Wokwi evidence; the expanded checks remain unverified.
+  unknown-card assertions. Its current run remains unverified because the
+  synchronized Wokwi clock was after closing time, so its grant assertion was
+  denied by the configured schedule.
 - Roster management, serial CLI actions, empty-building light shutdown, visual
   LED feedback, SD-full/recovery and reboot scenarios are not yet demonstrated.
 
@@ -97,7 +111,9 @@ Local evidence from this update:
 3. Demonstrate CLI queries, admin schedule changes, adding/deleting a user, and
    the refusal to delete an occupied user.
 4. Demonstrate both room lights and off-delay, empty-building light shutdown,
-   link outage/recovery, and serial diagnostics.
+   link outage/recovery, serial diagnostics, and the new `usage` command. Verify
+   that on-time increases while a light is active and suppressed time increases
+   when the building is confirmed empty.
 5. Check the feedback LED pulses visually in Wokwi. The current feedback LED
    does not actuate a real door, and the keypad B tailgate marker is simulated
    rather than an automatic sensor.

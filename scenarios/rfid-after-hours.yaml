@@ -1,0 +1,33 @@
+name: CoCIS RFID after-hours safety test
+version: 1
+steps:
+  - wait-serial: "entrance ready;"
+  - wait-serial: "SNTP synchronized;"
+  - set-control:
+      part-id: entry_rfid
+      name: card
+      value: 1
+  - set-control:
+      part-id: entry_rfid
+      name: tagPresent
+      value: 1
+  - wait-serial: "point=entry user=Demo User 2 uid=11223344 result=DENIED inside=0 (schedule closed)"
+  - set-control:
+      part-id: entry_rfid
+      name: tagPresent
+      value: 0
+  - delay: 1600ms
+  - set-control:
+      part-id: entry_rfid
+      name: card
+      value: 3
+  - set-control:
+      part-id: entry_rfid
+      name: tagPresent
+      value: 1
+  - wait-serial: "uid=AABBCCDD result=DENIED inside=0 (unknown user)"
+  - set-control:
+      part-id: entry_rfid
+      name: tagPresent
+      value: 0
+  - delay: 1000ms

@@ -88,7 +88,15 @@ Changed state is published once the pending delivery completes. A 2-second heart
 
 Boot counters are committed to NVS namespace `trevor_link`, key `boot`, before tasks start. NVS initialization/commit errors stop startup rather than reuse identifiers; the code never erases team NVS automatically. Comparisons use serial-number arithmetic and assume less than 2^31 increments between observations. If a board's NVS is erased or replaced, restart the coordinator as part of re-pairing, because its previous session history is no longer valid. Uptime is not wall-clock time; Edward supplies timestamps for permanent records.
 
-This is **eventual synchronization of latest room state**, not guaranteed delivery of every intermediate transition or a durable event journal. During outages, intermediate changes can be coalesced. Access records are handed directly to the storage queue by Leon's module; remote access-event transport and schedule replication are not defined by this room protocol. Agree those extensions with the team before integration.
+This is **eventual synchronization of latest room state**, not guaranteed delivery of every intermediate transition or a durable room-event journal. During outages, intermediate changes can be coalesced. Access records are handed to the local storage queue by Leon's module and wait for a local SD write result; remote access-event transport and schedule replication are not defined by this room protocol. Agree those extensions with the team before integration.
+
+## Light-use report
+
+Each room task tracks its effective light-on time and the time a requested
+light was suppressed because the entrance runtime confirmed the building was
+empty. Edward's serial `usage` command displays both totals in minutes and
+seconds. They reset on reboot and measure runtime only; without a configured
+lamp wattage they must not be presented as kWh or an electricity bill.
 
 ## Synchronization and storage integration
 
@@ -96,7 +104,7 @@ This is **eventual synchronization of latest room state**, not guaranteed delive
 
 Edward's `components/storage/runtime.c` provides the strong `tr_storage_append(const tr_storage_event *)` implementation for the combined demo. Exactly one Trevor task invokes it; successful return means the event was flushed to the SD file. `storage_unwritten` counts failed/unavailable writes. `storage_queue_drop` counts rejected queue admissions. These counters reset on reboot; failed events are not retained for retry. Edward's CLI record reads and roster writes use the same filesystem mutex. The entry/exit scenario verified SD event writes; roster persistence, full-card handling and recovery still need Wokwi checks.
 
-Leon can enqueue up to 48 bytes of an access event through `tr_runtime_record_access(data, length)`. A true return means queued, not durably stored. On false, the caller must retry or report loss. The concurrency test launches two independent producers, deliberately fills the queue, retries rejected admissions and checks that all 200 records reach a non-overlapping storage callback. It also injects a callback failure and checks the diagnostic counter. Building-wide occupancy and schedule ownership remain with Leon; this module does not create competing versions of that shared state.
+The entrance submits access events through `tr_runtime_record_access_durable()`. It waits up to five seconds for the storage worker to report the SD write result. Room events remain asynchronous so room-control tasks do not wait for file writes. Schedule-change audit events use the same queue and writer. Building-wide occupancy and schedule ownership remain with Leon; this module does not create competing copies of that state.
 
 ## Manual demonstration checklist
 
@@ -109,6 +117,9 @@ These steps require a running Wokwi or physical setup. Automated Windows tests e
 5. Set switch right. Both coordinator snapshots recover and report the current state. Counters expose any retry/duplicate behavior; do not expect every intermediate disconnected transition in storage.
 6. On physical boards, disconnect each UART wire independently and repeat. In particular disconnect only coordinator TX (ACK direction), then change motion: fresh state must still arrive after retry timeout. Restart a room with NVS intact; its higher session must be accepted. Restart coordinator; the next heartbeat must restore both snapshots.
 7. Connect Edward's SD hook and repeat with a missing/full card. Confirm `storage_unwritten` increases and local lighting continues. Run concurrent entrance events and room motion. Verify actual persisted contents before marking SD integration complete.
+8. In the combined demo, run the serial `usage` command. Confirm room light-on
+   time increases while a light is active and empty-suppressed time increases
+   when the building count is known to be zero. Both values reset on reboot.
 
 ## Trevor's report contribution draft
 

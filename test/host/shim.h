@@ -33,10 +33,13 @@ typedef int esp_err_t;
     } while (0)
 typedef unsigned TickType_t;
 typedef int BaseType_t;
+typedef void *TaskHandle_t;
 typedef void *QueueHandle_t;
 typedef void *SemaphoreHandle_t;
+#define pdFALSE 0
 #define pdTRUE 1
 #define pdPASS 1
+#define eSetValueWithOverwrite 1
 #define pdMS_TO_TICKS(ms) (ms)
 #define portMAX_DELAY INFINITE
 QueueHandle_t xQueueCreate(unsigned length, unsigned size);
@@ -47,6 +50,11 @@ int xSemaphoreTake(SemaphoreHandle_t m, unsigned timeout);
 int xSemaphoreGive(SemaphoreHandle_t m);
 int xTaskCreate(void (*fn)(void *), const char *name, unsigned stack, void *arg, unsigned priority,
                 void *handle);
+TaskHandle_t xTaskGetCurrentTaskHandle(void);
+TickType_t xTaskGetTickCount(void);
+int xTaskNotify(TaskHandle_t task, uint32_t value, int action);
+int xTaskNotifyWait(uint32_t clear_on_entry, uint32_t clear_on_exit, uint32_t *value,
+                    unsigned timeout);
 void vTaskDelay(unsigned ticks);
 int64_t esp_timer_get_time(void);
 typedef struct {

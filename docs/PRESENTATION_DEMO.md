@@ -38,9 +38,23 @@ room-lights-off-at-zero rule.
 The scenario `scenarios/rfid-entry-exit.yaml` passed in Wokwi: the SD card
 mounted, the green demo card entered and exited during open hours, occupancy
 returned to zero, and both access events were written to `sdcard/events.csv`.
-The expanded `scenarios/presentation-smoke.yaml` also checks repeat-entry and
-unknown-card denial. Its latest CLI attempt lost the WebSocket transport before
-the serial checks, so those added assertions are not yet confirmed.
+Current firmware writes readable access rows with a Kampala timestamp and
+waits for the storage worker to flush and sync the row. Use the serial `records`
+command to show the event history. After changing the schedule, `records` also
+shows a `SCHEDULE` row with the old and new hours. Reboot persistence is
+implemented through the SD card and NVS but still needs a fresh live
+power-cycle demonstration.
+To check it, set the closing time to `23:00`, wait for `SCHEDULE SAVED`, and
+run `records` on UART0. Reset the ESP32 without replacing or formatting the SD
+card, wait for SNTP, then run `schedule` and `records` again. The schedule
+should still end at `23:00`, and the access/schedule rows should remain. This
+live power-cycle check is not yet recorded as passed.
+The after-hours scenario `scenarios/rfid-after-hours.yaml` also passed in Wokwi.
+It read the registered card UID `11223344` and denied entry because the
+08:00-18:00 schedule was closed, then read the unknown UID `AABBCCDD` and
+denied it. Run `rfid-entry-exit.yaml` during open hours to demonstrate a grant.
+The expanded `scenarios/presentation-smoke.yaml` has not yet passed its full
+set of automated assertions.
 
 Anti-passback denial is part of the current demo. On the public keypad screen,
 press `B` to mark a **simulated tailgate** and press `C` to print a read-only
@@ -49,7 +63,7 @@ LCD show that occupancy is uncertain; it does not add a person to the inside
 list. At closing time, the firmware prints an after-hours roll-call if anyone
 is still recorded inside. Grace's blue feedback LED pulses after scans; it does
 not unlock a door. Feature limits are in
-[`LEON_ENTRANCE_SAFETY_DESIGN.md`](LEON_ENTRANCE_SAFETY_DESIGN.md).
+[`SYSTEM_OPERATION_REPORT.md`](SYSTEM_OPERATION_REPORT.md).
 
 ## Change the schedule at the terminal
 
@@ -87,7 +101,10 @@ presentation check.
 ## Edward's serial menu
 
 At the UART0 serial console type `help`. Read commands include `status`,
-`inside`, `rooms`, `users`, `records`, and `schedule`. `login 2468` grants a
+`inside`, `rooms`, `usage`, `users`, `records`, and `schedule`. The `usage`
+command compares room light-on time with requested light-on time suppressed
+while the building is confirmed empty. Values reset at reboot and are not kWh.
+`login 2468` grants a
 60-second admin session for schedule changes (`open HH:MM`, `close HH:MM`),
 roster changes (`useradd NAME UIDHEX`, `userdel ID`), and `confirm-empty`.
 User and CLI actions are implemented but still need a live Wokwi walkthrough.

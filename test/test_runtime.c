@@ -75,6 +75,19 @@ int main(void) {
     assert(v.rooms[0].online && v.rooms[1].online);
     puts("PASS outage, stale status, local light autonomy and reconnect snapshot");
 
+    assert(tr_runtime_set_building_inside_count(0, true) == ESP_OK);
+    Sleep(100);
+    v = view();
+    assert(!gpio_get_level(26));
+    assert(v.empty_building_saved_ms[0] > 0);
+    assert(tr_runtime_set_building_inside_count(1, true) == ESP_OK);
+    wait_lights(true, false);
+    Sleep(100);
+    v = view();
+    assert(v.light_on_ms[0] > 0);
+    assert(tr_runtime_set_building_inside_count(0, true) == ESP_OK);
+    puts("PASS room light usage and empty-building suppressed-on-time counters");
+
     xTaskCreate(producer, "p1", 4096, "entry", 2, NULL);
     xTaskCreate(producer, "p2", 4096, "exit", 2, NULL);
     for (int i = 0; i < 500 && (producer_done != 2 || stored_access != 200); i++)
