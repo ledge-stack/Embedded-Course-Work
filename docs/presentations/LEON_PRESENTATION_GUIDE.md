@@ -114,8 +114,10 @@ Wi-Fi code.
 - `entrance_apply_scan()` creates the next event number and passes the scan to
   the same decision function.
 
-The two demo UIDs on a clean install are `DE:AD:BE:EF` and `11:22:33:44`. The
-roster can later be supplied by Edward's storage module.
+The four demo cards on a clean install map to the group: Blue
+(`DE:AD:BE:EF`) is Leon, Green (`11:22:33:44`) is Kato Trevor, Yellow
+(`55:66:77:88`) is Kagimu Edward, and Red (`AA:BB:CC:DD`) is Ahurira Grace.
+The roster can later be managed and saved by Edward's storage and CLI modules.
 
 ### C. `components/entrance/runtime.c` — connect the pieces
 
@@ -287,15 +289,22 @@ time. Have the demo UIDs and the current simulated time in mind.
 1. **Introduce the display.** Point out the open/closed status, schedule, and
    inside count. If it says `TIME SYNC...`, wait for SNTP before scanning.
 2. **Show one successful entry.** Tap an enabled demo card at the entry
-   reader during the open window. Explain the person and count update.
+   reader during the open window. Blue is Leon, Green is Trevor, Yellow is
+   Edward, and Red is Grace. The LCD briefly says `Welcome Leon` (or that
+   cardholder's first name) and updates the count.
 3. **Show anti-passback.** Tap the same card at entry again without exiting.
    Explain why the second scan is denied and the count remains unchanged.
-4. **Show the exit path.** Tap that card at the exit reader. Explain that the
-   inside count returns to its earlier value.
-5. **Show schedule administration if time permits.** Use `A`, PIN `2468`,
+4. **Show the exit path.** Tap that card at the exit reader. The LCD briefly
+   says `Goodbye` and the person's first name; explain that the inside count
+   returns to its earlier value.
+5. **Show the admin roster and activity lists.** Press `A`, enter PIN `2468`,
+   then press `3` for the roster or `4` for recent scans. Use `A`/`B` to move
+   between pages and `D` to return to the admin menu. The dashboard shows both
+   lists after sign-in.
+6. **Show schedule administration if time permits.** Use `A`, PIN `2468`,
    `#`, then `2`; enter a valid closing time in `HHMM` format and press `#`.
    The LCD shows a checking message while authentication and saving happen.
-6. **Explain persistence honestly.** The schedule is kept in NVS and a change
+7. **Explain persistence honestly.** The schedule is kept in NVS and a change
    is audited on SD. A power-cycle check of the latest readable event rows
    should only be called passed if it has just been demonstrated.
 

@@ -11,7 +11,7 @@ steps:
       part-id: entry_rfid
       name: tagPresent
       value: 1
-  - wait-serial: "point=entry user=Demo User 2 uid=11223344 result=DENIED inside=0 (schedule closed)"
+  - wait-serial: "point=entry user=Kato Trevor uid=11223344 result=DENIED inside=0 (schedule closed)"
   - set-control:
       part-id: entry_rfid
       name: tagPresent
@@ -20,12 +20,12 @@ steps:
   - set-control:
       part-id: entry_rfid
       name: card
-      value: 3
+      value: 5
   - set-control:
       part-id: entry_rfid
       name: tagPresent
       value: 1
-  - wait-serial: "uid=AABBCCDD result=DENIED inside=0 (unknown user)"
+  - wait-serial: "uid=C0FFEE99 result=DENIED inside=0 (unknown user)"
   - set-control:
       part-id: entry_rfid
       name: tagPresent

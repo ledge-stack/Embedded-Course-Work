@@ -16,13 +16,15 @@ static const int rows[4] = {14, 15, 16, 17};
 static const int cols[4] = {34, 35, 36, 39};
 static const char keys[4][4] = {
     {'1', '2', '3', 'A'}, {'4', '5', '6', 'B'}, {'7', '8', '9', 'C'}, {'*', '0', '#', 'D'}};
-enum ui_mode { UI_PUBLIC, UI_PIN, UI_MENU, UI_OPEN, UI_CLOSE, UI_MESSAGE };
+enum ui_mode { UI_PUBLIC, UI_PIN, UI_MENU, UI_OPEN, UI_CLOSE, UI_PEOPLE, UI_ACTIVITY, UI_MESSAGE };
 
 /* The keypad is a small state machine: each key is handled according to this mode. */
 static enum ui_mode mode = UI_PUBLIC;
 static SemaphoreHandle_t ui_mutex;
 static char input[9];
 static size_t input_size;
+static size_t people_page;
+static size_t activity_page;
 static char message[4][21];
 static int64_t session_until;
 static int64_t message_until;
@@ -72,6 +74,90 @@ static void begin_time_entry(enum ui_mode target) {
     session_until = esp_timer_get_time() / 1000 + 60000;
     screen_set(target == UI_OPEN ? "Set OPEN time" : "Set CLOSE time", "Enter HHMM then #",
                "* clears input", "D cancels");
+    xSemaphoreGive(ui_mutex);
+}
+
+static void show_admin_menu(void) {
+    screen_set("ADMIN MENU", "1 Open  2 Close", "3 People 4 Activity", "D Logout");
+}
+
+static void show_people_page(void) {
+    system_user users[SYSTEM_MAX_USERS];
+    bool inside[SYSTEM_MAX_USERS];
+    size_t user_count, inside_count;
+    entrance_status status;
+    if (!entrance_runtime_snapshot(users, inside, SYSTEM_MAX_USERS, &user_count, &inside_count,
+                                   NULL) ||
+        !entrance_runtime_status(&status)) {
+        xSemaphoreTake(ui_mutex, portMAX_DELAY);
+        if (mode == UI_PEOPLE)
+            screen_set("People unavailable", "Try again", "", "D Admin menu");
+        xSemaphoreGive(ui_mutex);
+        return;
+    }
+    (void)inside_count;
+    const size_t page_size = 2;
+    size_t page_count = (user_count + page_size - 1u) / page_size;
+    if (!page_count)
+        page_count = 1;
+    if (people_page >= page_count)
+        people_page = page_count - 1u;
+
+    char title[21], first[21] = "", second[21] = "";
+    snprintf(title, sizeof(title), status.occupancy_uncertain ? "People %u/%u CHECK"
+                                                              : "People %u/%u",
+             (unsigned)(people_page + 1u), (unsigned)page_count);
+    size_t visible = 0, shown = 0;
+    for (size_t i = 0; i < SYSTEM_MAX_USERS && shown < page_size; i++) {
+        if (!users[i].enabled)
+            continue;
+        if (visible++ < people_page * page_size)
+            continue;
+        char row[21];
+        const char *state = inside[i] ? "IN" : status.occupancy_uncertain ? "OUT?" : "OUT";
+        snprintf(row, sizeof(row), "%-4s %.15s", state, users[i].display_name);
+        snprintf(shown++ == 0 ? first : second, 21, "%s", row);
+    }
+    if (!shown)
+        snprintf(first, sizeof(first), "No registered users");
+    xSemaphoreTake(ui_mutex, portMAX_DELAY);
+    if (mode == UI_PEOPLE)
+        screen_set(title, first, second, "A next B prev D menu");
+    xSemaphoreGive(ui_mutex);
+}
+
+static void show_activity_page(void) {
+    entrance_access_record records[ENTRANCE_RECENT_ACCESS_COUNT];
+    size_t record_count;
+    if (!entrance_runtime_recent_access(records, ENTRANCE_RECENT_ACCESS_COUNT, &record_count)) {
+        xSemaphoreTake(ui_mutex, portMAX_DELAY);
+        if (mode == UI_ACTIVITY)
+            screen_set("Activity unavailable", "Try again", "", "D Admin menu");
+        xSemaphoreGive(ui_mutex);
+        return;
+    }
+    if (record_count && activity_page >= record_count)
+        activity_page = record_count - 1u;
+    if (!record_count)
+        activity_page = 0;
+
+    char title[21], name[21] = "No scans this run", detail[21] = "";
+    if (record_count) {
+        const entrance_access_record *record = &records[activity_page];
+        snprintf(title, sizeof(title), "Recent %u/%u", (unsigned)(activity_page + 1u),
+                 (unsigned)record_count);
+        const char *action = !record->granted ? "Denied:"
+                             : record->entering ? "Welcome"
+                                                : "Goodbye";
+        snprintf(name, sizeof(name), "%s %.12s", action, record->name);
+        snprintf(detail, sizeof(detail), "%s %.5s %s", record->entering ? "ENTRY" : "EXIT",
+                 record->time, record->granted ? "OK" : "DENIED");
+    } else {
+        snprintf(title, sizeof(title), "Recent access");
+    }
+    xSemaphoreTake(ui_mutex, portMAX_DELAY);
+    if (mode == UI_ACTIVITY)
+        screen_set(title, name, detail, "A older B newer D menu");
     xSemaphoreGive(ui_mutex);
 }
 
@@ -138,7 +224,7 @@ static void handle_key(char key) {
             if (ok) {
                 mode = UI_MENU;
                 session_until = checked_at + 60000;
-                screen_set("ADMIN AUTHORIZED", "1 Set OPEN time", "2 Set CLOSE time", "D Logout");
+                show_admin_menu();
             } else {
                 mode = UI_MESSAGE;
                 message_until = checked_at + 2000;
@@ -166,20 +252,68 @@ static void handle_key(char key) {
             begin_time_entry(UI_CLOSE);
             return;
         }
+        if (key == '3') {
+            mode = UI_PEOPLE;
+            people_page = 0;
+            xSemaphoreGive(ui_mutex);
+            show_people_page();
+            return;
+        }
+        if (key == '4') {
+            mode = UI_ACTIVITY;
+            activity_page = 0;
+            xSemaphoreGive(ui_mutex);
+            show_activity_page();
+            return;
+        }
         if (key == 'D' || key == '*') {
             mode = UI_PUBLIC;
             xSemaphoreGive(ui_mutex);
             return;
         }
-        screen_set("ADMIN AUTHORIZED", "1 Set OPEN time", "2 Set CLOSE time", "D Logout");
+        show_admin_menu();
         xSemaphoreGive(ui_mutex);
+        return;
+    }
+    if (mode == UI_PEOPLE) {
+        session_until = now + 60000;
+        if (key == 'D') {
+            mode = UI_MENU;
+            show_admin_menu();
+            xSemaphoreGive(ui_mutex);
+            return;
+        }
+        if (key == 'A')
+            people_page++;
+        else if (key == 'B' && people_page > 0)
+            people_page--;
+        xSemaphoreGive(ui_mutex);
+        if (key == 'A' || key == 'B')
+            show_people_page();
+        return;
+    }
+    if (mode == UI_ACTIVITY) {
+        session_until = now + 60000;
+        if (key == 'D') {
+            mode = UI_MENU;
+            show_admin_menu();
+            xSemaphoreGive(ui_mutex);
+            return;
+        }
+        if (key == 'A')
+            activity_page++;
+        else if (key == 'B' && activity_page > 0)
+            activity_page--;
+        xSemaphoreGive(ui_mutex);
+        if (key == 'A' || key == 'B')
+            show_activity_page();
         return;
     }
     if (mode == UI_OPEN || mode == UI_CLOSE) {
         session_until = now + 60000;
         if (key == 'D') {
             mode = UI_MENU;
-            screen_set("ADMIN AUTHORIZED", "1 Set OPEN time", "2 Set CLOSE time", "D Logout");
+            show_admin_menu();
             xSemaphoreGive(ui_mutex);
             return;
         }
@@ -252,7 +386,9 @@ static void keypad_task(void *arg) {
         previous = key;
         int64_t now = esp_timer_get_time() / 1000;
         xSemaphoreTake(ui_mutex, portMAX_DELAY);
-        if ((mode == UI_MENU || mode == UI_OPEN || mode == UI_CLOSE) && now >= session_until) {
+        if ((mode == UI_MENU || mode == UI_OPEN || mode == UI_CLOSE || mode == UI_PEOPLE ||
+             mode == UI_ACTIVITY) &&
+            now >= session_until) {
             mode = UI_PUBLIC;
             ESP_LOGI(TAG, "keypad admin session expired");
         } else if (mode == UI_MESSAGE && now >= message_until)

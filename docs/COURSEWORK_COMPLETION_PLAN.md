@@ -88,7 +88,7 @@ Local evidence from this update:
 - The after-hours Wokwi scenario also passed: the ESP32 booted, joined Wi-Fi,
   synchronized time, mounted the SD card, read the registered UID
   `11223344`, and correctly denied entry while the schedule was closed. It
-  then read and denied the unknown UID `AABBCCDD`.
+  then read and denied the unregistered Key Fob UID `C0FFEE99`.
 - The current access/schedule CSV format and storage-completion acknowledgement
   compile in all four PlatformIO environments. The updated readable rows and
   survival of records through a power cycle have not yet been demonstrated in

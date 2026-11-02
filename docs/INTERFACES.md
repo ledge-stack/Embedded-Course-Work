@@ -20,7 +20,9 @@ All members should review it before extending the message protocol.
   registered-user list. Array indexes are stable user IDs. The API rejects
   duplicate/invalid UIDs and refuses to remove or replace a user who is still
   recorded inside. It saves the roster to SD with an NVS backup; on a clean device the
-  presentation build begins with the two demo users.
+  presentation build begins with four member cards: Blue/Leon, Green/Trevor,
+  Yellow/Edward, and Red/Grace. Old default demo-user names are migrated to the
+  member names at startup.
 - The public keypad reserves B for a simulation-only tailgate marker and C
   for a read-only evacuation roll-call. B marks occupancy uncertain but never
   edits the inside list; C prints names and count without card UIDs.

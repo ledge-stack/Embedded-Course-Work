@@ -130,7 +130,8 @@ presentation build, startup proceeds in this order:
    readers and the LCD, then starts the clock, RFID, schedule-monitor, display,
    and keypad tasks.
 6. Load a saved roster from SD or NVS when one exists. On a clean install, the
-   demo roster contains UIDs `DE:AD:BE:EF` and `11:22:33:44`.
+   demo roster maps Blue (`DE:AD:BE:EF`) to Leon, Green (`11:22:33:44`) to
+   Trevor, Yellow (`55:66:77:88`) to Edward, and Red (`AA:BB:CC:DD`) to Grace.
 7. Start an occupancy bridge. Every 250 ms it reads the entrance count and
    certainty and passes them to Trevor's room runtime.
 8. Start Edward's serial menu on UART0 at 115200 baud.
@@ -224,9 +225,11 @@ Keypad `C` prints a read-only roll-call of names to the serial console.
 ### 4.3 Access feedback and display
 
 The LCD is a 20x4 display. It shows whether the building is open, the schedule,
-the most recent access result, and the recorded inside count. It also shows an
-uncertainty message after a reboot or simulated tailgate alert, and an
-after-hours alert if people are still recorded inside when the schedule closes.
+the most recent access result, and the recorded inside count. After an accepted
+entry it briefly shows `Welcome` and the person's first name; after an accepted
+exit it briefly shows `Goodbye` and their first name. A denied scan shows the
+name with a denial message. It also shows occupancy uncertainty after a reboot
+or simulated tailgate alert and an after-hours alert if people remain inside.
 
 Grace's blue LED receives a grant/deny signal from the entrance module. A
 granted scan produces a short pulse; a denied scan produces a longer pulse.
@@ -239,10 +242,20 @@ schedule API. The keypad flow is:
 
 1. On the public screen press `A`.
 2. Enter the four-digit demo PIN `2468` and press `#`.
-3. In the administrator menu press `1` to change opening time or `2` to change
-   closing time.
-4. Enter four digits in `HHMM` format, then press `#`. For example, `2300`
+3. Press `1` to change opening time, `2` to change closing time, `3` to page
+   through the registered roster, or `4` to page through recent entry/exit
+   attempts. The roster shows `IN`, `OUT`, or `OUT?` while occupancy is
+   uncertain. In either list, `A` and `B` move between pages and `D` returns to
+   the admin menu; `D` in the menu logs out.
+4. To change a time, enter four digits in `HHMM` format, then press `#`. For
+   example, `2300`
    means 23:00. `*` clears the input and `D` cancels or logs out.
+
+After an access scan, the public LCD briefly welcomes a person who entered or
+says goodbye to someone who exited. The admin dashboard presents the full
+registered roster and recent scan activity. The keypad roster and activity
+views require the admin PIN. Recent activity in RAM resets at reboot; the SD
+event file keeps the longer access history when the card is available.
 
 The serial CLI provides read-only commands for status, occupancy, rooms, light
 usage, users, event records, and schedule. After `login 2468`, an administrator
@@ -455,7 +468,7 @@ The completion record documents a Wokwi run in which the SD card mounted, a
 registered green demo card entered and exited during open hours, occupancy
 returned to zero, and two access records were written. A separate after-hours
 scenario detected the registered UID `11223344` and denied entry because the
-schedule was closed, then rejected unknown UID `AABBCCDD`.
+schedule was closed, then rejected the unregistered Key Fob UID `C0FFEE99`.
 
 Those Wokwi runs used the earlier compact access-record format. The current
 firmware compiles with readable access rows, schedule-change audit rows, and a
