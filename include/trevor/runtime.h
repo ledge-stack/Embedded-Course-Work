@@ -11,7 +11,7 @@
 #ifndef TR_ROLE
 #define TR_ROLE 0
 #endif
-#define TR_DEFAULT_OFF_DELAY_MS 5000u
+#define TR_DEFAULT_OFF_DELAY_MS 120000u
 
 typedef struct {
     bool valid, online;

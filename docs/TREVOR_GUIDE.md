@@ -51,7 +51,7 @@ The demo switch is right = link up, left = down. Common pin 2 connects to GPIO32
 
 ## Behavior and configuration
 
-Inputs are sampled every 20 ms. Motion immediately sets occupancy true and light on. Each high sample refreshes the last-motion time. When the input falls, occupancy becomes false but light remains on for the configured delay. New motion extends the deadline. Delay is 5000 ms by default, range 0–3600000 ms. The simulated PIR itself holds high for one second; the software off-delay starts at the last high sample, not at the initial click. A PIR estimates activity; it cannot prove an empty room or count people.
+Inputs are sampled every 20 ms. Motion immediately sets occupancy true and light on. Each high sample refreshes the last-motion time. When the input falls, occupancy becomes false but light remains on for the configured delay. New motion extends the deadline. Delay is 120000 ms (2 minutes) by default, range 0–3600000 ms. The simulated PIR itself holds high for one second; the software off-delay starts at the last high sample, not at the initial click. A PIR estimates activity; it cannot prove an empty room or count people.
 
 Edward's authenticated command handler can call:
 
@@ -111,7 +111,7 @@ The entrance submits access events through `tr_runtime_record_access_durable()`.
 These steps require a running Wokwi or physical setup. Automated Windows tests exercise the adapter with simulated GPIO/queues; they do not replace these hardware checks.
 
 1. Build demo, open Wokwi, keep switch right. Wait for both `valid=1 online=1` status rows.
-2. Click each PIR and **Simulate Motion**. Each corresponding LED turns on; simultaneous triggers leave both lights on. Release motion and observe `motion=0 light=1`, followed by light off after five seconds from the final high input sample.
+2. Click each PIR and **Simulate Motion**. Each corresponding LED turns on; simultaneous triggers leave both lights on. Release motion and observe `motion=0 light=1`, followed by light off two minutes after the final high input sample.
 3. Retrigger before timeout and confirm the light remains on until a full delay after the renewed motion ends.
 4. Set switch left for over six seconds. Coordinator eventually reports `online=0`; retries/timeouts rise. Trigger a PIR while disconnected: its local LED still responds.
 5. Set switch right. Both coordinator snapshots recover and report the current state. Counters expose any retry/duplicate behavior; do not expect every intermediate disconnected transition in storage.

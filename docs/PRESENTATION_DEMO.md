@@ -22,15 +22,19 @@ room-lights-off-at-zero rule.
 
 ## Demonstrate access and occupancy
 
-1. In the entry reader panel, choose Blue Card (UID `DE:AD:BE:EF`) and tap it.
-   If Kampala time is inside the configured window, the LCD shows the person's
-   name, `ENTER`, time and inside count; serial reports `GRANTED`.
+1. In the entry reader panel, choose Blue Card (UID `DE:AD:BE:EF`) for Leon
+   Nsitta Kalungi and tap it. If Kampala time is inside the configured window,
+   the LCD says `Welcome Leon` and shows the time and inside count; serial
+   reports `GRANTED`.
 2. Present the same card at entry again. The LCD shows `DENIED` and count stays
    at 1 because anti-passback blocks a second entry.
-3. Present the card at the exit reader. The LCD reports `LEFT` and count returns
-   to 0. Present it at exit again to demonstrate exit-without-entry denial.
-4. Choose Green Card (UID `11:22:33:44`) for the second demo user. Choose the
-   Red Card preset to demonstrate an unknown-card denial.
+3. Present the card at the exit reader. The LCD says `Goodbye Leon` and the
+   count returns to 0. Present it at exit again to demonstrate exit-without-entry
+   denial.
+4. The remaining member cards are Green (`11:22:33:44`), Kato Trevor; Yellow
+   (`55:66:77:88`), Kagimu Edward; and Red (`AA:BB:CC:DD`), Ahurira Grace.
+   Their LCD call names are Trevor, Edward, and Grace. Use the Key Fob preset
+   (`C0:FF:EE:99`) or NFC Tag to demonstrate an unknown-card denial.
 5. Present a known card outside the access schedule at both readers to show
    that entry and exit are denied. A denied exit leaves occupancy unchanged.
    At close, serial logs list any remaining occupants.
@@ -51,8 +55,9 @@ should still end at `23:00`, and the access/schedule rows should remain. This
 live power-cycle check is not yet recorded as passed.
 The after-hours scenario `scenarios/rfid-after-hours.yaml` also passed in Wokwi.
 It read the registered card UID `11223344` and denied entry because the
-08:00-18:00 schedule was closed, then read the unknown UID `AABBCCDD` and
-denied it. Run `rfid-entry-exit.yaml` during open hours to demonstrate a grant.
+08:00-18:00 schedule was closed, then read the unregistered Key Fob UID
+`C0FFEE99` and denied it. Run `rfid-entry-exit.yaml` during open hours to
+demonstrate a grant.
 The expanded `scenarios/presentation-smoke.yaml` has not yet passed its full
 set of automated assertions.
 
@@ -74,15 +79,24 @@ not unlock a door. Feature limits are in
 3. Enter four digits in `HHMM` format and press `#`. `*` clears the entry;
    `D` cancels or logs out. The LCD shows `CHECKING TIME` while it validates
    and saves the new time in ESP32 NVS.
+4. From the admin menu, press `3` to page through all registered people and
+   their current state (`IN`, `OUT`, or `OUT?` when occupancy needs checking).
+   Press `A`/`B` to page forward/back and `D` to return to the menu.
+5. Press `4` to page through recent access attempts, newest first. It shows a
+   welcome, goodbye, or denial with the member's call name and entry/exit time.
+   The keypad and dashboard show up to eight scans from the current boot; the
+   full saved history is available with the serial `records` command.
 
 ## Change the schedule over Wi-Fi
 
 The dashboard serves from the ESP32 on port 80 after it joins `Wokwi-GUEST`.
 Run Wokwi's Private IoT Gateway, enable it in the Wokwi editor, then browse to
 `http://localhost:9080/` and sign in with demo PIN `2468`. The page shows live
-access state, occupancy, latest event, and opening/closing times, and lets an authorized
-presenter change the schedule. Browser access to the simulated server requires
-the Private IoT Gateway. The demo PIN and HTTP dashboard are for presentation
+access state, occupancy, the roster with each person's current state, recent
+entry/exit attempts, and opening/closing times. An authorized presenter can
+change the schedule there. The dashboard list is protected by sign-in. Recent
+attempts shown there are from the current simulation run; older event history
+remains on the SD card. The demo PIN and HTTP dashboard are for presentation
 only, not production authentication.
 
 ## Trevor's existing room demo
@@ -90,7 +104,7 @@ only, not production authentication.
 This is Trevor's pre-existing subsystem, included in the combined firmware.
 Trigger each PIR sensor and observe its matching room LED. Motion turns the
 light on immediately; after motion ends, the light stays on for the configured
-five-second off-delay. Move the link switch left to interrupt Trevor's logical
+two-minute off-delay. Move the link switch left to interrupt Trevor's logical
 room/coordinator queues, then right to restore them.
 
 The firmware forces room lights off only when the entrance count is confirmed

@@ -37,6 +37,30 @@ static char last_person[SYSTEM_NAME_MAX_BYTES];
 static char last_action[8];
 static char last_time[6];
 static bool occupancy_uncertain;
+static uint64_t last_event_display_until_ms;
+static entrance_access_record recent_access[ENTRANCE_RECENT_ACCESS_COUNT];
+static size_t recent_access_count;
+static size_t recent_access_next;
+
+/* Keep full roster names for records, and use familiar names on short displays. */
+static void make_call_name(const char *full_name, char *out, size_t capacity) {
+    const char *call_name = full_name;
+    if (!strcmp(full_name, "Kato Trevor"))
+        call_name = "Trevor";
+    else if (!strcmp(full_name, "Kagimu Edward"))
+        call_name = "Edward";
+    else if (!strcmp(full_name, "Ahurira Grace"))
+        call_name = "Grace";
+    if (call_name == full_name) {
+        size_t length = strcspn(full_name, " ");
+        if (length >= capacity)
+            length = capacity - 1u;
+        memcpy(out, full_name, length);
+        out[length] = 0;
+    } else {
+        snprintf(out, capacity, "%s", call_name);
+    }
+}
 
 static void wifi_handler(void *arg, esp_event_base_t base, int32_t id, void *data) {
     (void)arg;
@@ -266,11 +290,21 @@ static void process_scan(uint8_t reader, const uint8_t *uid, uint8_t uid_size) {
     last_event_valid = true;
     snprintf(last_person, sizeof(last_person), "%s", name);
     snprintf(last_action, sizeof(last_action), "%s",
-             granted ? (point == SYSTEM_ENTRY ? "ENTER" : "LEFT") : "DENIED");
+             granted ? (point == SYSTEM_ENTRY ? "WELCOME" : "GOODBYE") : "DENIED");
     if (valid)
         strftime(last_time, sizeof(last_time), "%H:%M", &local);
     else
         snprintf(last_time, sizeof(last_time), "--:--");
+    last_event_display_until_ms = mono + 4000u;
+    entrance_access_record *record = &recent_access[recent_access_next];
+    snprintf(record->name, sizeof(record->name), "%s", name);
+    make_call_name(name, record->call_name, sizeof(record->call_name));
+    snprintf(record->time, sizeof(record->time), "%s", last_time);
+    record->entering = point == SYSTEM_ENTRY;
+    record->granted = granted;
+    recent_access_next = (recent_access_next + 1u) % ENTRANCE_RECENT_ACCESS_COUNT;
+    if (recent_access_count < ENTRANCE_RECENT_ACCESS_COUNT)
+        recent_access_count++;
     /* Release the mutex before logging or writing to storage. */
     xSemaphoreGive(state_mutex);
     ESP_LOGI(TAG,
@@ -339,17 +373,24 @@ static void display_task(void *arg) {
                 snprintf(start, sizeof(start), "%02u:%02u", start_minute / 60u, start_minute % 60u);
                 snprintf(end, sizeof(end), "%02u:%02u", end_minute / 60u, end_minute % 60u);
                 snprintf(rows[1], 21, "Hours %.5s-%.5s", start, end);
-                if (status.occupancy_uncertain) {
+                if (status.show_last_event) {
+                    const char *greeting = !strcmp(status.last_action, "WELCOME") ? "Welcome"
+                                           : !strcmp(status.last_action, "GOODBYE") ? "Goodbye"
+                                                                                     : "Denied";
+                    char call_name[SYSTEM_NAME_MAX_BYTES];
+                    make_call_name(status.last_person, call_name, sizeof(call_name));
+                    snprintf(rows[2], 21, "%s %.11s", greeting, call_name);
+                    if (status.occupancy_uncertain)
+                        snprintf(rows[3], 21, "Inside %u - CHECK", (unsigned)status.inside_count);
+                    else
+                        snprintf(rows[3], 21, "At %s | Inside %u", status.last_time,
+                                 (unsigned)status.inside_count);
+                } else if (status.occupancy_uncertain) {
                     snprintf(rows[2], 21, "OCCUPANCY UNCERTAIN");
                     snprintf(rows[3], 21, "Recorded inside: %u", (unsigned)status.inside_count);
                 } else if (status.clock_valid && !status.is_open && status.inside_count > 0) {
                     snprintf(rows[2], 21, "AFTER-HOURS ALERT");
                     snprintf(rows[3], 21, "Still inside: %u", (unsigned)status.inside_count);
-                } else if (status.has_last_event) {
-                    snprintf(rows[2], 21, "Last: %.7s %.5s", status.last_person,
-                             status.last_action);
-                    snprintf(rows[3], 21, "At %s | Inside %u", status.last_time,
-                             (unsigned)status.inside_count);
                 } else {
                     snprintf(rows[2], 21, "Waiting for RFID...");
                     snprintf(rows[3], 21, "Inside: %u", (unsigned)status.inside_count);
@@ -396,7 +437,7 @@ esp_err_t entrance_runtime_start(void) {
     if (e != ESP_OK)
         return e;
     ESP_LOGI(TAG,
-             "entrance ready; demo UIDs DE:AD:BE:EF and 11:22:33:44; schedule %02u:%02u-%02u:%02u "
+             "entrance ready; four member RFID cards are registered; schedule %02u:%02u-%02u:%02u "
              "Kampala time",
              state.schedule.start_minute / 60, state.schedule.start_minute % 60,
              state.schedule.end_minute / 60, state.schedule.end_minute % 60);
@@ -460,6 +501,22 @@ bool entrance_runtime_snapshot(system_user *users, bool *inside, size_t capacity
     return true;
 }
 
+bool entrance_runtime_recent_access(entrance_access_record *records, size_t capacity,
+                                    size_t *record_count) {
+    if (!started || !records || !record_count || !capacity)
+        return false;
+    xSemaphoreTake(state_mutex, portMAX_DELAY);
+    size_t count = recent_access_count < capacity ? recent_access_count : capacity;
+    for (size_t i = 0; i < count; i++) {
+        size_t index = (recent_access_next + ENTRANCE_RECENT_ACCESS_COUNT - 1u - i) %
+                       ENTRANCE_RECENT_ACCESS_COUNT;
+        records[i] = recent_access[index];
+    }
+    *record_count = count;
+    xSemaphoreGive(state_mutex);
+    return true;
+}
+
 esp_err_t entrance_runtime_set_schedule(system_access_schedule schedule) {
     if (!started)
         return ESP_ERR_INVALID_STATE;
@@ -499,6 +556,8 @@ bool entrance_runtime_status(entrance_status *out) {
     out->schedule = state.schedule;
     out->inside_count = entrance_inside_count(&state);
     out->has_last_event = last_event_valid;
+    out->show_last_event = last_event_valid &&
+                           (uint64_t)esp_timer_get_time() / 1000u < last_event_display_until_ms;
     out->occupancy_uncertain = occupancy_uncertain;
     snprintf(out->last_person, sizeof(out->last_person), "%s", last_person);
     snprintf(out->last_action, sizeof(out->last_action), "%s", last_action);

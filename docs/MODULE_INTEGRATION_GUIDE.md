@@ -28,6 +28,8 @@ flowchart TD
     COMMON -. shared types .-> TREVOR
     CARD --> LEON
     LEON -->|grant/deny result| GRACE
+    LEON -->|named result| LCD[Entrance LCD]
+    LEON -->|roster and recent scans| WEB[Authenticated dashboard]
     LEON -->|occupancy + certainty, every 250 ms| TREVOR
     ROOM <--> TREVOR
     LEON -->|access event| TREVOR

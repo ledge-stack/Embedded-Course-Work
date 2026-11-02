@@ -3,18 +3,33 @@
 
 static const system_user demo_users[] = {{.uid_size = 4,
                                           .uid = {0xDE, 0xAD, 0xBE, 0xEF},
-                                          .display_name = "Demo User 1",
+                                          .display_name = "Leon Nsitta Kalungi",
                                           .enabled = true},
                                          {.uid_size = 4,
                                           .uid = {0x11, 0x22, 0x33, 0x44},
-                                          .display_name = "Demo User 2",
+                                          .display_name = "Kato Trevor",
+                                          .enabled = true},
+                                         {.uid_size = 4,
+                                          .uid = {0x55, 0x66, 0x77, 0x88},
+                                          .display_name = "Kagimu Edward",
+                                          .enabled = true},
+                                         {.uid_size = 4,
+                                          .uid = {0xAA, 0xBB, 0xCC, 0xDD},
+                                          .display_name = "Ahurira Grace",
                                           .enabled = true}};
+
+void entrance_default_users(system_user users[SYSTEM_MAX_USERS]) {
+    if (!users)
+        return;
+    memset(users, 0, sizeof(system_user) * SYSTEM_MAX_USERS);
+    memcpy(users, demo_users, sizeof(demo_users));
+}
 
 void entrance_state_init(entrance_state *state) {
     if (!state)
         return;
     memset(state, 0, sizeof(*state));
-    memcpy(state->users, demo_users, sizeof(demo_users));
+    entrance_default_users(state->users);
     state->schedule = (system_access_schedule){.start_minute = 8u * 60u, .end_minute = 18u * 60u};
 }
 

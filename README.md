@@ -6,15 +6,29 @@ ESP32 based coursework project for a pilot covering the CoCIS main entrance and 
 
 | Member | Primary area |
 | --- | --- |
-| Leon Nsitta | Project setup, entrance terminal, access schedule and integration |
+| Leon Nsitta Kalungi | Project setup, entrance terminal, access schedule and integration |
 | Kato Trevor | Lecture room terminals, inter-terminal communication and synchronization |
 | Kagimu Edward | SD card storage, serial menus and authentication |
 | Ahurira Grace | Scan feedback LED and its actuator interface |
 
+On a clean install, the Wokwi RFID cards are assigned to these members:
+
+| Wokwi card | Member | UID |
+| --- | --- | --- |
+| Blue | Leon Nsitta Kalungi | `DE:AD:BE:EF` |
+| Green | Kato Trevor | `11:22:33:44` |
+| Yellow | Kagimu Edward | `55:66:77:88` |
+| Red | Ahurira Grace | `AA:BB:CC:DD` |
+
 ## Current status
 
-Leon implemented the entrance RFID readers, access and anti-passback decisions,
-Kampala schedule, LCD, keypad, dashboard, roll-call, and roster API. Trevor's
+Leon implemented the entrance RFID readers, member card roster, access and
+anti-passback decisions, Kampala schedule, LCD, keypad, dashboard, roll-call,
+and roster API. Accepted entry and exit scans show a named welcome or goodbye;
+the LCD keypad and signed-in dashboard include each member's current roster
+status and up to eight recent scans. Those live lists reset at reboot; the SD
+card keeps the longer event history, which can be read with the serial
+`records` command. Trevor's
 room sensing, automatic lights, messaging, retries, FreeRTOS synchronization,
 serialized storage queue, and light-use counters live under `components/trevor/`.
 Edward's SD event
@@ -46,9 +60,10 @@ Trevor's `coordinator`, `room1`, and `room2` environments are separate physical
 roles and do not start Leon's entrance pins. The demo joins `Wokwi-GUEST` and
 uses SNTP for the Kampala access schedule. Both entry and exit fail closed if
 time is unavailable or the schedule is closed. If no saved roster exists, the
-demo starts with UID `DE:AD:BE:EF`
-and `11:22:33:44`; admin roster changes are saved to the SD card with an NVS
-backup.
+demo starts with four member cards: Blue (`DE:AD:BE:EF`) for Leon, Green
+(`11:22:33:44`) for Trevor, Yellow (`55:66:77:88`) for Edward, and Red
+(`AA:BB:CC:DD`) for Grace. Admin roster changes are saved to the SD card with
+an NVS backup.
 The LCD shows entrance status, schedule, last event, and occupancy. Admins can
 change hours from the keypad (press `A`, enter demo PIN `2468`, then `#`) or the
 Wi-Fi dashboard; schedule changes persist in NVS and are also recorded in the

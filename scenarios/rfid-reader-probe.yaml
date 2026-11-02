@@ -10,7 +10,7 @@ steps:
       part-id: entry_rfid
       name: tagPresent
       value: 1
-  - wait-serial: "point=entry user=Demo User 2 uid=11223344"
+  - wait-serial: "point=entry user=Kato Trevor uid=11223344"
   - set-control:
       part-id: entry_rfid
       name: tagPresent
@@ -24,7 +24,7 @@ steps:
       part-id: exit_rfid
       name: tagPresent
       value: 1
-  - wait-serial: "point=exit user=Demo User 2 uid=11223344"
+  - wait-serial: "point=exit user=Kato Trevor uid=11223344"
   - set-control:
       part-id: exit_rfid
       name: tagPresent

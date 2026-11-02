@@ -7,7 +7,9 @@ presentation build without owning the same pins or state.
 ## The short version
 
 - Leon owns entry/exit RFID decisions, building occupancy, the access schedule,
-  the entrance LCD, admin keypad, and admin Wi-Fi page.
+  the entrance LCD, admin keypad, and admin Wi-Fi page. Accepted scans show a
+  named welcome or goodbye, and the authenticated views include roster status
+  and recent access activity.
 - Trevor owns the room sensors/lights and the room message/synchronization code
   in `components/trevor/`.
 - `pio run -e esp32dev` is the combined Wokwi presentation build. It uses one
@@ -94,22 +96,32 @@ item demonstrable:
 2. **Circuit and module setup:** keep one ESP32 in `diagram.json`, keep its pins
    matched with the source, and build the default `esp32dev` environment.
 3. **RFID access:** demonstrate a known card, an unknown card, and the correct
-   reader. The current allowlist is two presentation users, not a user
-  management system. Edward's store can supply its roster with
-  `entrance_runtime_set_users()`; until then, the demo roster remains active.
-4. **Occupancy:** allow a valid entry once, reject a second entry while that
+   reader. On a clean install, Blue (`DE:AD:BE:EF`) is Leon Nsitta Kalungi,
+   Green (`11:22:33:44`) is Kato Trevor, Yellow (`55:66:77:88`) is Kagimu
+   Edward, and Red (`AA:BB:CC:DD`) is Ahurira Grace. The entrance runtime
+   receives the saved roster from Edward's storage module through
+   `entrance_runtime_set_users()`.
+4. **Named activity:** a successful entry briefly displays `Welcome` and the
+   member's call name; a successful exit displays `Goodbye` and the call name.
+   Denied scans show the member name and denial state.
+5. **Admin lists:** after keypad sign-in, option `3` shows roster membership
+   and current inside state; option `4` pages through up to eight scans from
+   this boot. The dashboard shows the same roster and recent activity after
+   sign-in. The full persisted log remains in the SD card and is read from the
+   serial `records` command.
+6. **Occupancy:** allow a valid entry once, reject a second entry while that
    user is inside, allow their exit, and reject an exit when they are not inside.
-5. **Hours and clock:** use Kampala local time from SNTP. Deny new entry if time
+7. **Hours and clock:** use Kampala local time from SNTP. Deny new entry if time
    is unknown or the schedule is closed. The same schedule blocks exits after
    closing; show the denied scan and unchanged inside count. Show people still
    inside in the close-time log.
-6. **Admin schedule changes:** demonstrate keypad and Wi-Fi changes, validation
+8. **Admin schedule changes:** demonstrate keypad and Wi-Fi changes, validation
    of opening/closing times, lockout after repeated wrong PINs, and persistence
    after reboot. Both interfaces must call the same schedule API.
-7. **Integration and report:** demonstrate Leon's entrance separately from
+9. **Integration and report:** demonstrate Leon's entrance separately from
    Trevor's room subsystem, identify each author's work clearly, and record
    only results that were actually run.
-8. **Release:** keep the work on the feature branch and PR, build the combined
+10. **Release:** keep the work on the feature branch and PR, build the combined
    environment, and get the requested teammate review before merge.
 
 ### Remaining work to track honestly

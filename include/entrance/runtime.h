@@ -14,11 +14,21 @@ typedef struct {
     size_t inside_count;
     system_access_schedule schedule;
     bool has_last_event;
+    bool show_last_event;
     bool occupancy_uncertain;
     char last_person[SYSTEM_NAME_MAX_BYTES];
     char last_action[8];
     char last_time[6];
 } entrance_status;
+
+#define ENTRANCE_RECENT_ACCESS_COUNT 8u
+typedef struct {
+    char name[SYSTEM_NAME_MAX_BYTES];      /* Full roster name for records. */
+    char call_name[SYSTEM_NAME_MAX_BYTES]; /* Short form for greetings. */
+    char time[6];
+    bool entering;
+    bool granted;
+} entrance_access_record;
 
 esp_err_t entrance_runtime_start(void);
 /* Edward loads registered users and passes the fixed 32-slot roster here.
@@ -27,6 +37,9 @@ esp_err_t entrance_runtime_set_users(const system_user users[SYSTEM_MAX_USERS]);
 bool entrance_runtime_snapshot(system_user *users, bool *inside, size_t capacity,
                                size_t *user_count, size_t *inside_count,
                                system_access_schedule *schedule);
+/* Copy the newest access attempts first. These recent items reset at reboot. */
+bool entrance_runtime_recent_access(entrance_access_record *records, size_t capacity,
+                                    size_t *record_count);
 /* Schedule writes must be made only after caller-side administrator authentication. */
 esp_err_t entrance_runtime_set_schedule(system_access_schedule schedule);
 bool entrance_runtime_status(entrance_status *out);

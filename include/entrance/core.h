@@ -13,6 +13,8 @@ typedef struct {
     system_access_schedule schedule;
 } entrance_state;
 
+/* Fill a 32-slot roster with the four Wokwi member cards and disable unused slots. */
+void entrance_default_users(system_user users[SYSTEM_MAX_USERS]);
 void entrance_state_init(entrance_state *state);
 bool entrance_schedule_valid(system_access_schedule schedule);
 bool entrance_is_open(system_access_schedule schedule, unsigned local_minute);

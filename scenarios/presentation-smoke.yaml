@@ -13,7 +13,7 @@ steps:
       part-id: entry_rfid
       name: tagPresent
       value: 1
-  - wait-serial: "point=entry user=Demo User 2 uid=11223344 result=GRANTED inside=1"
+  - wait-serial: "point=entry user=Kato Trevor uid=11223344 result=GRANTED inside=1"
   - set-control:
       part-id: entry_rfid
       name: tagPresent
@@ -29,7 +29,7 @@ steps:
       name: tagPresent
       value: 0
 
-  # The same card exits, and an unregistered red card is denied.
+  # The same card exits, and an unregistered key fob is denied.
   - delay: 1600ms
   - set-control:
       part-id: exit_rfid
@@ -39,7 +39,7 @@ steps:
       part-id: exit_rfid
       name: tagPresent
       value: 1
-  - wait-serial: "point=exit user=Demo User 2 uid=11223344 result=GRANTED inside=0"
+  - wait-serial: "point=exit user=Kato Trevor uid=11223344 result=GRANTED inside=0"
   - set-control:
       part-id: exit_rfid
       name: tagPresent
@@ -48,12 +48,12 @@ steps:
   - set-control:
       part-id: entry_rfid
       name: card
-      value: 3
+      value: 5
   - set-control:
       part-id: entry_rfid
       name: tagPresent
       value: 1
-  - wait-serial: "uid=AABBCCDD result=DENIED inside=0 (unknown user)"
+  - wait-serial: "uid=C0FFEE99 result=DENIED inside=0 (unknown user)"
   - set-control:
       part-id: entry_rfid
       name: tagPresent

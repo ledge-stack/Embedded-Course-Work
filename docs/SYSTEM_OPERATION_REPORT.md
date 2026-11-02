@@ -58,7 +58,7 @@ functions for the CoCIS building. Its objectives are to:
 | Coursework requirement | Current implementation | Important boundary |
 | --- | --- | --- |
 | Automated access control | Entry and exit RFID scans are checked against the roster, inside list, clock, and schedule. | The indicators do not operate a real door lock. |
-| RFID identification | Two MFRC522 readers use separate chip-select pins on a shared SPI bus. | Demo UIDs are provided when no saved roster is available. |
+| RFID identification | Two MFRC522 readers use separate chip-select pins on a shared SPI bus. A clean roster assigns Blue to Leon Nsitta Kalungi, Green to Kato Trevor, Yellow to Kagimu Edward, and Red to Ahurira Grace. | A saved roster takes precedence; the default UIDs are for the Wokwi presentation. |
 | Occupancy monitoring | The entrance keeps a live list and count based on granted RFID transitions. | This is a logical count; it does not detect tailgating or independently count people. |
 | Intelligent room lighting | Two PIR/light channels use an off-delay and an empty-building override. | PIR reports motion, not room headcount. |
 | Data storage | Access and room events go to SD; roster and schedule are stored persistently. | Live inside state and runtime usage counters reset at reboot. |
@@ -130,7 +130,8 @@ presentation build, startup proceeds in this order:
    readers and the LCD, then starts the clock, RFID, schedule-monitor, display,
    and keypad tasks.
 6. Load a saved roster from SD or NVS when one exists. On a clean install, the
-   demo roster contains UIDs `DE:AD:BE:EF` and `11:22:33:44`.
+   demo roster maps Blue (`DE:AD:BE:EF`) to Leon, Green (`11:22:33:44`) to
+   Trevor, Yellow (`55:66:77:88`) to Edward, and Red (`AA:BB:CC:DD`) to Grace.
 7. Start an occupancy bridge. Every 250 ms it reads the entrance count and
    certainty and passes them to Trevor's room runtime.
 8. Start Edward's serial menu on UART0 at 115200 baud.
@@ -224,9 +225,13 @@ Keypad `C` prints a read-only roll-call of names to the serial console.
 ### 4.3 Access feedback and display
 
 The LCD is a 20x4 display. It shows whether the building is open, the schedule,
-the most recent access result, and the recorded inside count. It also shows an
-uncertainty message after a reboot or simulated tailgate alert, and an
-after-hours alert if people are still recorded inside when the schedule closes.
+the most recent access result, and the recorded inside count. After an accepted
+entry it briefly shows `Welcome` and the person's call name; after an accepted
+exit it briefly shows `Goodbye` and their call name. The default call names are
+Leon, Trevor, Edward, and Grace, while the roster and saved records retain each
+member's full name. A denied scan shows the member's call name with a denial
+message. It also shows occupancy uncertainty after a reboot or simulated
+tailgate alert and an after-hours alert if people remain inside.
 
 Grace's blue LED receives a grant/deny signal from the entrance module. A
 granted scan produces a short pulse; a denied scan produces a longer pulse.
@@ -239,10 +244,23 @@ schedule API. The keypad flow is:
 
 1. On the public screen press `A`.
 2. Enter the four-digit demo PIN `2468` and press `#`.
-3. In the administrator menu press `1` to change opening time or `2` to change
-   closing time.
-4. Enter four digits in `HHMM` format, then press `#`. For example, `2300`
+3. Press `1` to change opening time, `2` to change closing time, `3` to page
+   through the registered roster, or `4` to page through recent entry/exit
+   attempts. The roster shows `IN`, `OUT`, or `OUT?` while occupancy is
+   uncertain. In either list, `A` and `B` move between pages and `D` returns to
+   the admin menu; `D` in the menu logs out.
+4. To change a time, enter four digits in `HHMM` format, then press `#`. For
+   example, `2300`
    means 23:00. `*` clears the input and `D` cancels or logs out.
+
+After an access scan, the public LCD briefly welcomes a person who entered or
+says goodbye to someone who exited. The admin dashboard presents the full
+registered roster, current `INSIDE`/`OUTSIDE`/`CHECK` state, and up to eight
+recent scans. On the keypad, option `3` pages through the roster and option `4`
+pages through those same recent scans. Both lists require keypad or dashboard
+authentication. Recent activity in RAM resets at reboot; the SD event file
+keeps the longer access history, which is available through the serial
+`records` command when the card is mounted.
 
 The serial CLI provides read-only commands for status, occupancy, rooms, light
 usage, users, event records, and schedule. After `login 2468`, an administrator
@@ -255,7 +273,7 @@ IoT Gateway for access from a host browser.
 
 Trevor's room runtime creates a task for each room. The task samples its PIR
 input, updates the room state, and controls only that room's light output.
-Motion turns the light on. When motion stops, a five-second off-delay keeps the
+Motion turns the light on. When motion stops, a two-minute off-delay keeps the
 light on; renewed motion restarts the delay. The off-delay is configurable in
 the room runtime, with a maximum of one hour.
 
@@ -398,7 +416,7 @@ was synced without making the room-control task wait for storage.
 
 | Member | Contribution presented in this project | Main code area |
 | --- | --- | --- |
-| **Leon Nsitta Kalungi** | Project setup and integration; entry/exit RFID, access rules, anti-passback, inside tracking, Kampala schedule, time handling, LCD, keypad, dashboard, roll-call, and access-event handoff. | `components/entrance/`, `include/entrance/`, `src/main.c` |
+| **Leon Nsitta Kalungi** | Project setup and integration; entry/exit RFID, member card roster, named welcome/goodbye display, access rules, anti-passback, inside tracking, Kampala schedule, LCD, authenticated keypad and dashboard roster/activity views, roll-call, and access-event handoff. | `components/entrance/`, `include/entrance/`, `src/main.c` |
 | **Kato Trevor** | Two room PIR/light channels, off-delay, room protocol, sequence and checksum checks, acknowledgements, retries, synchronization diagnostics, bounded event queue, single storage worker, building-empty safety rule, and light-use counters. | `components/trevor/`, `include/trevor/` |
 | **Kagimu Edward** | Shared SPI and SD-card interface, event logging, roster file and NVS backup, UART0 query menu, records reader, and authenticated schedule/user administration. | `components/storage/`, `components/cli/`, `include/storage/`, `include/cli/` |
 | **Ahurira Grace** | Blue access-feedback LED interface with different pulse lengths for grants and denials, plus its wiring contract. | `components/actuator/`, `include/actuator/` |
@@ -430,6 +448,11 @@ basic card scanning and motion-triggered lights:
   tailgate sensor.
 - **Read-only evacuation roll-call:** keypad `C` prints the recorded names and
   count without exposing card UIDs.
+- **Named access feedback and administrator activity views:** the public LCD
+  greets a member by call name after a granted transition. Authenticated
+  administrators can inspect every roster member's current state and the
+  latest eight scans on the keypad or dashboard. The complete persistent event
+  archive stays on SD and can be read through the serial `records` command.
 - **Empty-building light override:** known-zero building occupancy forces both
   room light outputs off.
 - **Link recovery and diagnostics:** room messages use sequences,
@@ -455,7 +478,7 @@ The completion record documents a Wokwi run in which the SD card mounted, a
 registered green demo card entered and exited during open hours, occupancy
 returned to zero, and two access records were written. A separate after-hours
 scenario detected the registered UID `11223344` and denied entry because the
-schedule was closed, then rejected unknown UID `AABBCCDD`.
+schedule was closed, then rejected the unregistered Key Fob UID `C0FFEE99`.
 
 Those Wokwi runs used the earlier compact access-record format. The current
 firmware compiles with readable access rows, schedule-change audit rows, and a

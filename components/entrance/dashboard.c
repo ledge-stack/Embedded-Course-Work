@@ -7,6 +7,7 @@
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -42,6 +43,9 @@ static const char page[] =
     "<label>Closes <input id='end' type='time' required></label></div>"
     "<button>Save schedule</button><button type='button' onclick='logout()'>Sign "
     "out</button></form>"
+    "<section><h2>People status</h2><ul id='people'></ul></section>"
+    "<section><h2>Recent entry and exit</h2><ul id='activity'></ul></section>"
+    "<p>Recent activity is from this simulation run. The SD card keeps the longer event record.</p>"
     "<p id='message'></p></div></main><script>let csrf='';"
     "async function login(){let p=document.querySelector('#pin').value;"
     "let r=await "
@@ -59,7 +63,15 @@ static const char page[] =
     "document.querySelector('#details').textContent='Opens '+s.start+' · Closes '+s.end+' · Inside "
     "'+s.inside+"
     "' · Last: '+s.last+' '+s.action+' at '+s.at;document.querySelector('#start').value=s.start;"
-    "document.querySelector('#end').value=s.end}"
+    "document.querySelector('#end').value=s.end;"
+    "let people=document.querySelector('#people');people.replaceChildren();"
+    "for(let p of s.people){let li=document.createElement('li');"
+    "li.textContent=p.name+' — '+p.state;people.appendChild(li)}"
+    "let activity=document.querySelector('#activity');activity.replaceChildren();"
+    "for(let e of s.recent){let li=document.createElement('li');"
+    "let action=e.granted?(e.entering?'Welcome ':'Goodbye '):'Denied: ';"
+    "li.textContent=action+e.call_name+' — '+e.name+' ('+(e.entering?'entry':'exit')+' '+e.time+')';"
+    "activity.appendChild(li)}}"
     "async function save(e){e.preventDefault();let "
     "a=document.querySelector('#start').value,b=document.querySelector('#end').value;"
     "let r=await "
@@ -138,6 +150,41 @@ static bool receive_body(httpd_req_t *req, char *body, size_t capacity) {
     body[received] = 0;
     return true;
 }
+static int hex_digit(char value) {
+    if (value >= '0' && value <= '9')
+        return value - '0';
+    if (value >= 'A' && value <= 'F')
+        return value - 'A' + 10;
+    if (value >= 'a' && value <= 'f')
+        return value - 'a' + 10;
+    return -1;
+}
+static bool decode_form_body(char *body) {
+    char *read = body;
+    char *write = body;
+    while (*read) {
+        if (*read == '%') {
+            if (!read[1] || !read[2])
+                return false;
+            int high = hex_digit(read[1]);
+            int low = hex_digit(read[2]);
+            if (high < 0 || low < 0)
+                return false;
+            char decoded = (char)((high << 4) | low);
+            if (!decoded)
+                return false;
+            *write++ = decoded;
+            read += 3;
+        } else if (*read == '+') {
+            *write++ = ' ';
+            read++;
+        } else {
+            *write++ = *read++;
+        }
+    }
+    *write = 0;
+    return true;
+}
 static esp_err_t index_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "text/html; charset=utf-8");
     httpd_resp_set_hdr(req, "Cache-Control", "no-store");
@@ -182,6 +229,18 @@ static void json_escape(char *out, size_t cap, const char *input) {
     }
     out[used] = 0;
 }
+static bool append_format(char *out, size_t capacity, size_t *used, const char *format, ...) {
+    if (!out || !used || *used >= capacity)
+        return false;
+    va_list args;
+    va_start(args, format);
+    int written = vsnprintf(out + *used, capacity - *used, format, args);
+    va_end(args);
+    if (written < 0 || (size_t)written >= capacity - *used)
+        return false;
+    *used += (size_t)written;
+    return true;
+}
 static void format_time(uint16_t minute, char out[6]) {
     minute = (uint16_t)(minute % 1440u);
     unsigned hour = minute / 60u, mins = minute % 60u;
@@ -198,20 +257,61 @@ static esp_err_t status_handler(httpd_req_t *req) {
     entrance_status s;
     if (!entrance_runtime_status(&s))
         return send_error(req, 400, "Status unavailable");
+    system_user users[SYSTEM_MAX_USERS];
+    bool inside[SYSTEM_MAX_USERS];
+    size_t user_count, inside_count;
+    if (!entrance_runtime_snapshot(users, inside, SYSTEM_MAX_USERS, &user_count, &inside_count,
+                                   NULL))
+        return send_error(req, 400, "People status unavailable");
+    entrance_access_record recent[ENTRANCE_RECENT_ACCESS_COUNT];
+    size_t recent_count;
+    if (!entrance_runtime_recent_access(recent, ENTRANCE_RECENT_ACCESS_COUNT, &recent_count))
+        return send_error(req, 400, "Recent activity unavailable");
     char last[2 * SYSTEM_NAME_MAX_BYTES + 1];
     json_escape(last, sizeof(last), s.last_person);
     char start[6], end[6];
     format_time(s.schedule.start_minute, start);
     format_time(s.schedule.end_minute, end);
-    char response[512];
+    char response[4096];
+    size_t used = 0;
     xSemaphoreTake(session_mutex, portMAX_DELAY);
-    snprintf(response, sizeof(response),
-             "{\"clock\":%s,\"open\":%s,\"start\":\"%s\",\"end\":\"%s\","
-             "\"inside\":%u,\"last\":\"%s\",\"action\":\"%s\",\"at\":\"%s\",\"csrf\":\"%s\"}",
-             s.clock_valid ? "true" : "false", s.is_open ? "true" : "false", start, end,
-             (unsigned)s.inside_count, last, s.has_last_event ? s.last_action : "NONE",
-             s.has_last_event ? s.last_time : "--:--", csrf_token);
+    bool fits = append_format(
+        response, sizeof(response), &used,
+        "{\"clock\":%s,\"open\":%s,\"start\":\"%s\",\"end\":\"%s\","
+        "\"inside\":%u,\"last\":\"%s\",\"action\":\"%s\",\"at\":\"%s\","
+        "\"csrf\":\"%s\",\"people\":[",
+        s.clock_valid ? "true" : "false", s.is_open ? "true" : "false", start, end,
+        (unsigned)inside_count, last, s.has_last_event ? s.last_action : "NONE",
+        s.has_last_event ? s.last_time : "--:--", csrf_token);
     xSemaphoreGive(session_mutex);
+    bool first = true;
+    for (size_t i = 0; fits && i < SYSTEM_MAX_USERS; i++) {
+        if (!users[i].enabled)
+            continue;
+        char name[2 * SYSTEM_NAME_MAX_BYTES + 1];
+        json_escape(name, sizeof(name), users[i].display_name);
+        const char *state = inside[i] ? "INSIDE" : s.occupancy_uncertain ? "CHECK" : "OUTSIDE";
+        fits = append_format(response, sizeof(response), &used,
+                             "%s{\"name\":\"%s\",\"state\":\"%s\"}",
+                             first ? "" : ",", name, state);
+        first = false;
+    }
+    fits = fits && append_format(response, sizeof(response), &used, "],\"recent\":[");
+    for (size_t i = 0; fits && i < recent_count; i++) {
+        char name[2 * SYSTEM_NAME_MAX_BYTES + 1];
+        char call_name[2 * SYSTEM_NAME_MAX_BYTES + 1];
+        json_escape(name, sizeof(name), recent[i].name);
+        json_escape(call_name, sizeof(call_name), recent[i].call_name);
+        fits = append_format(response, sizeof(response), &used,
+                             "%s{\"name\":\"%s\",\"call_name\":\"%s\","
+                             "\"entering\":%s,\"granted\":%s,\"time\":\"%s\"}",
+                             i ? "," : "", name, call_name,
+                             recent[i].entering ? "true" : "false",
+                             recent[i].granted ? "true" : "false", recent[i].time);
+    }
+    fits = fits && append_format(response, sizeof(response), &used, "]}");
+    if (!fits)
+        return send_error(req, 400, "Dashboard status is too large");
     httpd_resp_set_type(req, "application/json");
     httpd_resp_set_hdr(req, "Cache-Control", "no-store");
     return httpd_resp_send(req, response, HTTPD_RESP_USE_STRLEN);
@@ -234,7 +334,7 @@ static esp_err_t schedule_handler(httpd_req_t *req) {
     if (req->content_len <= 10 || req->content_len > BODY_MAX)
         return send_error(req, 400, "Invalid schedule");
     char body[BODY_MAX + 1] = {0};
-    if (!receive_body(req, body, sizeof(body)))
+    if (!receive_body(req, body, sizeof(body)) || !decode_form_body(body))
         return send_error(req, 400, "Invalid schedule");
     char *start = strstr(body, "start="), *end = strstr(body, "end=");
     if (!start || !end)

@@ -1,6 +1,6 @@
 # Coursework implementation and completion plan
 
-**Status date:** 1 November 2026
+**Status date:** 2 November 2026
 
 **Submission date in the original plan:** 2 November 2026
 
@@ -10,12 +10,21 @@ from simulation evidence. Folder ownership is also listed in
 
 ## Implemented by member
 
-### Leon Nsitta — entrance and integration
+### Leon Nsitta Kalungi — entrance and integration
 
 - Two RFID readers, known-user checks, entry/exit decisions, anti-passback,
   inside list/count, and schedule checks at both doors.
 - Kampala SNTP clock, schedule persistence, LCD, keypad, Wi-Fi dashboard,
   evacuation roll-call, after-hours alert, and access-event handoff.
+- The clean-install card roster assigns Blue (`DE:AD:BE:EF`) to Leon Nsitta
+  Kalungi, Green (`11:22:33:44`) to Kato Trevor, Yellow (`55:66:77:88`) to
+  Kagimu Edward, and Red (`AA:BB:CC:DD`) to Ahurira Grace. The LCD uses the
+  call names Leon, Trevor, Edward, and Grace for successful entry/exit
+  greetings.
+- Keypad menu options `3` and `4` provide the authenticated roster and up to
+  eight recent scans. The signed-in dashboard provides the same views. Recent
+  scans reset at reboot; the SD event log holds the longer history, readable
+  through the serial `records` command.
 - `entrance_runtime_set_users()` accepts Edward's saved roster without allowing
   an occupied person's identity to be replaced or removed.
 - `src/main.c` connects Leon's authoritative inside count to Trevor's rooms.
@@ -73,6 +82,12 @@ in `wokwi.toml`.
 
 ## Verification status
 
+The current member card names, named display greetings, keypad lists, and
+dashboard lists have been implemented in firmware and documented. The current
+source builds locally in all four PlatformIO environments. These new user
+interface paths still need a fresh interactive Wokwi demonstration before they
+are described as simulator-verified.
+
 Local evidence from this update:
 
 - All four PlatformIO environments passed after the both-door schedule rule
@@ -88,7 +103,7 @@ Local evidence from this update:
 - The after-hours Wokwi scenario also passed: the ESP32 booted, joined Wi-Fi,
   synchronized time, mounted the SD card, read the registered UID
   `11223344`, and correctly denied entry while the schedule was closed. It
-  then read and denied the unknown UID `AABBCCDD`.
+  then read and denied the unregistered Key Fob UID `C0FFEE99`.
 - The current access/schedule CSV format and storage-completion acknowledgement
   compile in all four PlatformIO environments. The updated readable rows and
   survival of records through a power cycle have not yet been demonstrated in

@@ -8,3 +8,7 @@ rfc2217ServerPort = 4000
 folder = "sdcard"
 size = "8M"
 writeback = true
+
+[[net.forward]]
+from = "localhost:9080"
+to = "target:80"
