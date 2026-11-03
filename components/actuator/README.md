@@ -1,11 +1,3 @@
-# Ahurira Grace — entrance feedback
+# actuator
 
-`runtime.c` drives the combined-demo blue status LED after an RFID scan. A
-granted scan gives a short pulse; a denied scan gives a longer pulse. The output
-is simulation feedback only; it does not operate or unlock a real door.
-
-GPIO12 is used because the combined board has no other free output. It is an
-ESP32 boot-strapping pin, so the diagram keeps it low with an external pulldown.
-The blue LED uses a 330 Ohm series resistor and GPIO12 also has a 10 kOhm
-pulldown resistor to ground.
-The board resistor and boot behavior must be checked again if the wiring changes.
+Grace: separate entry GPIO32 and exit GPIO12 LED door outputs. Granted scans open the relevant indicator for three seconds. An independent task closes deadlines; the bridge closes both outside hours. The GPIO12 pulldown remains. LEDs are simulated doors, not locks.

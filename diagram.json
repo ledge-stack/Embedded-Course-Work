@@ -69,16 +69,6 @@
       }
     },
     {
-      "type": "wokwi-slide-switch",
-      "id": "link",
-      "top": 360,
-      "left": 25,
-      "attrs": {
-        "value": "1",
-        "bounce": "0"
-      }
-    },
-    {
       "type": "board-mfrc522",
       "id": "entry_rfid",
       "top": -250,
@@ -109,7 +99,7 @@
       "top": -315,
       "left": -180,
       "attrs": {
-        "text": "ONE ESP32 SIMULATION: entrance terminal + two logical rooms"
+        "text": "CoCIS: rooms and RFID entry / exit"
       }
     },
     {
@@ -118,7 +108,7 @@
       "top": 445,
       "left": -300,
       "attrs": {
-        "text": "Admin: A + PIN 2468; public keys B=SIMULATED TAILGATE, C=ROLL-CALL"
+        "text": "PIR lights | Entry door GPIO32 | Exit door GPIO12"
       }
     },
     {
@@ -127,7 +117,7 @@
       "top": 475,
       "left": -300,
       "attrs": {
-        "text": "LCD status + Wi-Fi dashboard; browser access uses Wokwi Private IoT Gateway"
+        "text": "Keypad + LCD + Wi-Fi dashboard retained"
       }
     },
     {
@@ -194,17 +184,17 @@
     },
     {
       "type": "wokwi-led",
-      "id": "door_feedback",
+      "id": "exit_door",
       "top": 760,
       "left": 640,
       "attrs": {
         "color": "blue",
-        "label": "Access feedback LED (GPIO12)"
+        "label": "Exit door (GPIO12)"
       }
     },
     {
       "type": "wokwi-resistor",
-      "id": "door_feedback_resistor",
+      "id": "exit_resistor",
       "top": 760,
       "left": 710,
       "attrs": {
@@ -213,11 +203,30 @@
     },
     {
       "type": "wokwi-resistor",
-      "id": "door_feedback_pulldown",
+      "id": "exit_pulldown",
       "top": 805,
       "left": 790,
       "attrs": {
         "value": "10k"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "entry_door",
+      "top": 760,
+      "left": 460,
+      "attrs": {
+        "color": "green",
+        "label": "Entry door (GPIO32)"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "entry_resistor",
+      "top": 760,
+      "left": 530,
+      "attrs": {
+        "value": "330"
       }
     }
   ],
@@ -391,24 +400,6 @@
       []
     ],
     [
-      "link:2",
-      "esp:D32",
-      "blue",
-      []
-    ],
-    [
-      "link:1",
-      "esp:GND.1",
-      "black",
-      []
-    ],
-    [
-      "link:3",
-      "esp:3V3",
-      "red",
-      []
-    ],
-    [
       "sdcard:VCC",
       "esp:3V3",
       "red",
@@ -578,30 +569,48 @@
     ],
     [
       "esp:D12",
-      "door_feedback:A",
+      "exit_door:A",
       "blue",
       []
     ],
     [
-      "door_feedback:C",
-      "door_feedback_resistor:1",
+      "exit_door:C",
+      "exit_resistor:1",
       "blue",
       []
     ],
     [
-      "door_feedback_resistor:2",
+      "exit_resistor:2",
       "esp:GND.1",
       "black",
       []
     ],
     [
       "esp:D12",
-      "door_feedback_pulldown:1",
+      "exit_pulldown:1",
       "purple",
       []
     ],
     [
-      "door_feedback_pulldown:2",
+      "exit_pulldown:2",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "esp:D32",
+      "entry_door:A",
+      "green",
+      []
+    ],
+    [
+      "entry_door:C",
+      "entry_resistor:1",
+      "green",
+      []
+    ],
+    [
+      "entry_resistor:2",
       "esp:GND.1",
       "black",
       []

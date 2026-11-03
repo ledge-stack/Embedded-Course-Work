@@ -8,7 +8,7 @@ gcc -std=c11 -Wall -Wextra -Werror -Iinclude \
 /tmp/test_entrance
 ```
 
-Run Trevor's portable room/protocol tests:
+Run Trevor's portable room timing/usage tests:
 
 ```sh
 gcc -std=c11 -Wall -Wextra -Werror -Iinclude \
@@ -20,11 +20,11 @@ gcc -std=c11 -Wall -Wextra -Werror -Iinclude \
 GPIO stubs. Run the full suite on Windows with PowerShell and a C compiler:
 
 ```powershell
-./scripts/test-trevor.ps1 -Compiler 'C:\path\to\tcc.exe'
+./scripts/test-all.ps1 -Compiler 'C:\path\to\tcc.exe' -Python 'python'
 ```
 
 These host tests check firmware logic; they do not verify ESP32 electrical
-behavior, Wokwi hardware interactions, physical multi-board timing, or reboot
+behavior, Wokwi hardware interactions, or physical reboot
 recovery. For current end-to-end evidence, see
 [`../docs/COURSEWORK_COMPLETION_PLAN.md`](../docs/COURSEWORK_COMPLETION_PLAN.md).
 
@@ -41,3 +41,14 @@ python .\test\test_regressions.py
 The regression harness compiles the actual affected C function bodies. It uses
 host substitutes for HTTP requests, NVS, task input and synchronization; those
 checks do not claim an end-to-end Wokwi run or physical power-loss verification.
+
+The runtime suite now checks direct local snapshots, queue pressure, continued
+lighting, and real host task-notification completion (including a late reply
+after timeout). The actuator suite checks separate granted entry/exit pulses,
+denials and independent three-second closure. Removed wire protocol/outage
+tests remain in the pre-simplification archive, not the active suite.
+
+`test_rfid_poll.py` compiles the actual RFID transfer/poll functions against
+simulated reader registers. Five checks distinguish normal card-absence
+timeouts from SPI/reader errors and retain genuine error reporting. It runs
+with the full suite above; live card evidence is in docs/RFID_VERIFICATION.md.

@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define SYSTEM_PROTOCOL_VERSION 1u
 #define SYSTEM_MAX_USERS 32u
 #define SYSTEM_UID_MAX_BYTES 10u
 #define SYSTEM_NAME_MAX_BYTES 24u
@@ -41,13 +40,5 @@ typedef struct {
 typedef struct {
     uint16_t start_minute, end_minute;
 } system_access_schedule;
-
-typedef struct {
-    uint8_t version;
-    uint8_t kind;
-    uint16_t payload_size;
-    uint32_t sequence;
-    uint8_t payload[48];
-} system_terminal_message;
 
 #endif

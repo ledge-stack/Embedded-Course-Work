@@ -20,6 +20,7 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "lwip/apps/sntp.h"
+#include "lwip/ip_addr.h"
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
@@ -94,14 +95,23 @@ static void clock_task(void *arg) {
     setenv("TZ", "EAT-3", 1);
     tzset();
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    sntp_setservername(0, "pool.ntp.org");
+    /* Wokwi gateway DNS replies can arrive after the resolver times out.
+     * Try both published addresses: developers.cloudflare.com/time-services/ntp/usage/ */
+    ip_addr_t ntp_server;
+    IP_ADDR4(&ntp_server, 162, 159, 200, 123);
+    sntp_setserver(0, &ntp_server);
+    IP_ADDR4(&ntp_server, 162, 159, 200, 1);
+    sntp_setserver(1, &ntp_server);
     sntp_init();
+    unsigned waiting = 0;
     while (true) {
         time_t now = time(NULL);
         if (now > 1760000000 && !clock_ready) {
             clock_ready = true;
             ESP_LOGI(TAG, "SNTP synchronized; timezone Africa/Kampala (UTC+03:00)");
         }
+        if (!clock_ready && ++waiting % 4 == 0)
+            ESP_LOGW(TAG, "waiting for NTP time; access remains disabled until synchronized");
         vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
@@ -291,8 +301,8 @@ static void process_scan(uint8_t reader, const uint8_t *uid, uint8_t uid_size) {
         ESP_LOGW(TAG, "ANTI-PASSBACK ALERT: this person is already recorded inside");
     else if (result == SYSTEM_ACCESS_NOT_INSIDE)
         ESP_LOGW(TAG, "EXIT WITHOUT ENTRY ALERT: this person is not recorded inside");
+    actuator_runtime_signal(point, granted);
     save_event(&event, name, inside_count);
-    actuator_runtime_signal(granted);
 }
 
 static void entrance_task(void *arg) {
@@ -302,7 +312,6 @@ static void entrance_task(void *arg) {
     /* Poll both RFID readers and ignore a card held against a reader. */
     while (true) {
         uint64_t now = (uint64_t)esp_timer_get_time() / 1000u;
-        actuator_runtime_update();
         for (uint8_t reader = 0; reader < 2; reader++) {
             uint8_t uid[SYSTEM_UID_MAX_BYTES], size = 0;
             if (mfrc522_poll(reader, uid, &size)) {

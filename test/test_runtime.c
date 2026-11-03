@@ -9,9 +9,10 @@
 
 static LONG writing, stored_access, stored_rooms, producer_done;
 static volatile LONG storage_ok = 1;
+static volatile LONG storage_delay = 1;
 bool tr_storage_append(const tr_storage_event *e) {
     assert(InterlockedIncrement(&writing) == 1); /* callbacks never overlap */
-    Sleep(1);
+    Sleep(storage_delay);
     if (e->kind == TR_EVENT_ACCESS)
         InterlockedIncrement(&stored_access);
     if (e->kind == TR_EVENT_ROOM)
@@ -40,7 +41,7 @@ static void wait_lights(bool one, bool two) {
             return;
         Sleep(10);
     }
-    assert(!"timed out waiting for coordinator light snapshot");
+    assert(!"timed out waiting for local light snapshot");
 }
 int main(void) {
     assert(!tr_runtime_snapshot(NULL));
@@ -59,21 +60,15 @@ int main(void) {
     stub_gpio_input(27, 0);
     stub_gpio_input(33, 0);
     wait_lights(false, false);
-    puts("PASS concurrent room control and off-delay through coordinator frames");
+    puts("PASS concurrent room control and off-delay through local snapshots");
 
-    stub_gpio_input(32, 0); /* Disconnect both logical links. */
+    /* GPIO32 is no longer a link switch. Local snapshots need no UART/ACK. */
+    stub_gpio_input(32, 0);
     stub_gpio_input(27, 1);
-    Sleep(TR_STALE_MS + 250);
-    tr_system_view v = view();
-    assert(!v.rooms[0].online && !v.rooms[1].online);
-    assert(gpio_get_level(26)); /* local control survives lost link */
-    assert(v.retries[0] > 0 && v.transport_drops > 0);
-    stub_gpio_input(32, 1);
     wait_lights(true, false);
-    Sleep(100);
-    v = view();
-    assert(v.rooms[0].online && v.rooms[1].online);
-    puts("PASS outage, stale status, local light autonomy and reconnect snapshot");
+    tr_system_view v = view();
+    assert(v.rooms[0].state.occupied && gpio_get_level(26));
+    puts("PASS direct room snapshots without a simulated communication link");
 
     assert(tr_runtime_set_building_inside_count(0, true) == ESP_OK);
     Sleep(100);
@@ -100,6 +95,17 @@ int main(void) {
     Sleep(100);
     assert(view().storage_write_failures > 0);
     puts("PASS two concurrent producers, serialized storage, queue pressure, storage failure");
+    assert(!tr_runtime_record_access_durable("test", 4, "name", 1));
+    storage_ok = 1;
+    assert(tr_runtime_record_access_durable("test", 4, "name", 1));
+    system_access_schedule before = {480, 1080}, after = {480, 1380};
+    assert(tr_runtime_record_schedule_change(before, after, 1760000001));
+    puts("PASS actual task-notification completion for access and schedule records");
+    storage_delay = 5200;
+    assert(!tr_runtime_record_access_durable("slow", 4, "name", 1));
+    storage_delay = 1;
+    assert(tr_runtime_record_access_durable("next", 4, "name", 1));
+    puts("PASS timed-out write's late reply cannot complete the next request");
     puts("All runtime integration tests passed.");
     return 0;
 }

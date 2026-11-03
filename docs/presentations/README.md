@@ -7,7 +7,7 @@ demonstration, and limits to explain clearly.
 - [Leon Nsitta Kalungi — entrance and integration](LEON_PRESENTATION_GUIDE.md)
 - [Kato Trevor — room control and communication](TREVOR_PRESENTATION_GUIDE.md)
 - [Kagimu Edward — storage and serial menu](EDWARD_PRESENTATION_GUIDE.md)
-- [Ahurira Grace — scan feedback actuator](GRACE_PRESENTATION_GUIDE.md)
+- [Ahurira Grace — entry/exit door indicators](GRACE_PRESENTATION_GUIDE.md)
 
 The scripts describe each member's coursework contribution in that member's
 voice. Before submission, each member should confirm their identification

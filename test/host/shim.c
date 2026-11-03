@@ -53,6 +53,13 @@ typedef struct {
     void (*fn)(void *);
     void *arg;
 } task_arg;
+typedef struct {
+    HANDLE signal;
+    CRITICAL_SECTION lock;
+    uint32_t value;
+    bool pending;
+} notification;
+static DWORD notification_slot = TLS_OUT_OF_INDEXES;
 static DWORD WINAPI task_entry(LPVOID value) {
     task_arg copy = *(task_arg *)value;
     free(value);
@@ -61,6 +68,7 @@ static DWORD WINAPI task_entry(LPVOID value) {
 }
 int xTaskCreate(void (*fn)(void *), const char *name, unsigned stack, void *arg, unsigned priority,
                 void *handle) {
+    if (notification_slot == TLS_OUT_OF_INDEXES) notification_slot = TlsAlloc();
     (void)name;
     (void)stack;
     (void)priority;
@@ -79,24 +87,52 @@ int xTaskCreate(void (*fn)(void *), const char *name, unsigned stack, void *arg,
     return 1;
 }
 TaskHandle_t xTaskGetCurrentTaskHandle(void) {
-    return NULL;
+    if (notification_slot == TLS_OUT_OF_INDEXES) notification_slot = TlsAlloc();
+    notification *n = TlsGetValue(notification_slot);
+    if (!n) {
+        n = calloc(1, sizeof(*n));
+        n->signal = CreateEvent(NULL, TRUE, FALSE, NULL);
+        InitializeCriticalSection(&n->lock);
+        TlsSetValue(notification_slot, n);
+    }
+    return n;
 }
 TickType_t xTaskGetTickCount(void) {
     return (TickType_t)GetTickCount();
 }
 int xTaskNotify(TaskHandle_t task, uint32_t value, int action) {
-    (void)task;
-    (void)value;
     (void)action;
-    return 0;
+    notification *n = task;
+    if (!n) return 0;
+    EnterCriticalSection(&n->lock);
+    n->value = value;
+    n->pending = true;
+    SetEvent(n->signal);
+    LeaveCriticalSection(&n->lock);
+    return 1;
 }
 int xTaskNotifyWait(uint32_t clear_on_entry, uint32_t clear_on_exit, uint32_t *value,
                     unsigned timeout) {
-    (void)clear_on_entry;
-    (void)clear_on_exit;
-    (void)value;
-    (void)timeout;
-    return 0;
+    notification *n = xTaskGetCurrentTaskHandle();
+    DWORD began = GetTickCount();
+    EnterCriticalSection(&n->lock);
+    if (!n->pending) n->value &= ~clear_on_entry;
+    LeaveCriticalSection(&n->lock);
+    while (true) {
+        EnterCriticalSection(&n->lock);
+        if (n->pending) {
+            if (value) *value = n->value;
+            n->value &= ~clear_on_exit;
+            n->pending = false;
+            ResetEvent(n->signal);
+            LeaveCriticalSection(&n->lock);
+            return 1;
+        }
+        LeaveCriticalSection(&n->lock);
+        DWORD elapsed = GetTickCount() - began;
+        if (elapsed >= timeout || WaitForSingleObject(n->signal, timeout - elapsed) != WAIT_OBJECT_0)
+            return 0;
+    }
 }
 void vTaskDelay(unsigned ticks) {
     Sleep(ticks);

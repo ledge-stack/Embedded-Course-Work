@@ -21,7 +21,7 @@ dashboard, and event handoff.
 > keypad provides a local administrator screen. The Wi-Fi page and serial menu
 > use the same schedule API, so there is one schedule used by both readers.
 > After an access decision, the module reports it to the display and logs, calls
-> Grace's feedback LED, and passes the event to Trevor's queue for storage.”
+> Grace's separate entry/exit door indicators, and passes the event to Trevor's queue for storage.”
 
 ## Code to show
 
@@ -62,7 +62,7 @@ failure.
 
 ## Limits to state accurately
 
-The one-board Wokwi design represents two rooms and the coordinator as logical
+The one-board Wokwi design represents two rooms and the entrance as logical
 modules. The tailgate alert on keypad `B` is simulated because the circuit has no
-passage sensor. The inside list is not restored after reboot. The LEDs are
+passage sensor. The inside list is not restored after reboot. The door LEDs are
 indicators and do not unlock a real door.

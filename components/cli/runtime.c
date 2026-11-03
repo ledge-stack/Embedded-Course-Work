@@ -204,8 +204,8 @@ static void handle_command(char *line) {
         tr_system_view view;
         if (tr_runtime_snapshot(&view))
             for (unsigned i = 0; i < 2; i++)
-                printf("Room %u: online=%u motion=%u light=%u delay=%lu ms\n", i + 1,
-                       view.rooms[i].online, view.rooms[i].state.occupied,
+                printf("Room %u: ready=%u motion=%u light=%u delay=%lu ms\n", i + 1,
+                       view.rooms[i].valid, view.rooms[i].state.occupied,
                        view.rooms[i].state.light, (unsigned long)view.rooms[i].state.off_delay_ms);
     } else if (!strcmp(command, "usage"))
         print_light_usage();

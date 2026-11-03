@@ -328,9 +328,9 @@ bool tr_storage_append(const tr_storage_event *event) {
     }
     bool ok = false;
     if (event->kind == TR_EVENT_ROOM) {
-        const tr_message *room = &event->room_state;
-        ok = fprintf(file, "ROOM,%llu,%u,%" PRIu32 ",%u,%u,%" PRIu32 "\n",
-                     (unsigned long long)event->received_ms, (unsigned)room->room, room->sequence,
+        const tr_room_state *room = &event->room_state;
+        ok = fprintf(file, "ROOM,%llu,%u,%u,%u,%" PRIu32 "\n",
+                     (unsigned long long)event->received_ms, (unsigned)room->room,
                      (unsigned)room->occupied, (unsigned)room->light, room->off_delay_ms) > 0;
     } else if (event->kind == TR_EVENT_ACCESS) {
         ok = write_access_event(file, event);

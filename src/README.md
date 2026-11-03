@@ -1,6 +1,3 @@
-# Shared application entry point
+# src
 
-`main.c` performs startup in this order: NVS, SD storage, Trevor room runtime,
-Grace feedback output, Leon's entrance runtime, the occupancy bridge, and
-Edward's UART0 command task. This startup composition is shared integration
-work; member modules stay in their owner-labelled component folders.
+Startup: NVS, SD, room tasks/event worker, two door outputs, entrance (saved users before scans), occupancy bridge and CLI. The only target is esp32dev.

@@ -64,7 +64,7 @@ logout
 ```
 
 The CLI and ESP-IDF log output share UART0, so command responses and diagnostic
-messages can appear together. `records` can only show events when the SD card
+messages can appear together. `records` shows approximately the last 2 KB, after releasing the SD lock, and can only show events when the SD card
 is available. A queued event is not yet a durable record; storage counters
 report queue drops and write failures.
 

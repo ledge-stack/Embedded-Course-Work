@@ -1,5 +1,3 @@
-# Kato Trevor — room and communications interfaces
+# trevor
 
-These headers define Trevor's room rules, message format, snapshots, and event
-queue handoff. The entrance count API is a one-way safety input to the room
-runtime.
+Public room timing/usage types and APIs for local snapshots, occupancy input, off-delay and queued event storage. See docs/INTERFACES.md.

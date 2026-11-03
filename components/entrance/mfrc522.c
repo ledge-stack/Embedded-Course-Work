@@ -125,8 +125,9 @@ static esp_err_t calculate_crc(spi_device_handle_t dev, const uint8_t *data, siz
     return reg_read(dev, REG_CRC_RESULT_H, &out[1]);
 }
 static bool transceive(spi_device_handle_t dev, const uint8_t *tx, size_t tx_n, uint8_t tx_bits,
-                       uint8_t *rx, size_t rx_cap, size_t *rx_n, uint8_t *rx_bits) {
+                       uint8_t *rx, size_t rx_cap, size_t *rx_n, uint8_t *rx_bits, bool *timed_out) {
     /* Send a command, wait briefly for the reader, then copy its reply. */
+    if (timed_out) *timed_out = false;
     uint8_t irq = 0, level = 0, error = 0, control = 0;
     if (reg_write(dev, REG_COMMAND, CMD_IDLE) != ESP_OK ||
         reg_write(dev, REG_COM_IRQ, 0x7f) != ESP_OK ||
@@ -141,12 +142,21 @@ static bool transceive(spi_device_handle_t dev, const uint8_t *tx, size_t tx_n, 
         /* Idle can mean the command ended without receiving a card reply. */
         if (irq & 0x20)
             break;
-        if (irq & 0x01)
+        if (irq & 0x02)
             return false;
+        if (irq & 0x01) {
+            if (timed_out) *timed_out = true;
+            reg_write(dev, REG_BIT_FRAMING, 0);
+            return false;
+        }
         vTaskDelay(1);
     }
     reg_write(dev, REG_BIT_FRAMING, 0);
-    if (!(irq & 0x20) || reg_read(dev, REG_ERROR, &error) != ESP_OK || (error & 0x1b) ||
+    if (!(irq & 0x20)) {
+        if (timed_out) *timed_out = true;
+        return false;
+    }
+    if (reg_read(dev, REG_ERROR, &error) != ESP_OK || (error & 0x1b) ||
         reg_read(dev, REG_FIFO_LEVEL, &level) != ESP_OK || level > rx_cap ||
         fifo_read(dev, rx, level) != ESP_OK || reg_read(dev, REG_CONTROL, &control) != ESP_OK)
         return false;
@@ -162,7 +172,7 @@ static bool select_level(spi_device_handle_t dev, uint8_t sel, uint8_t block[5],
         return false;
     buf[7] = crc[0];
     buf[8] = crc[1];
-    if (!transceive(dev, buf, sizeof(buf), 0, response, sizeof(response), &n, &bits) || n != 3 ||
+    if (!transceive(dev, buf, sizeof(buf), 0, response, sizeof(response), &n, &bits, NULL) || n != 3 ||
         bits != 0)
         return false;
     if (calculate_crc(dev, response, 1, response_crc) != ESP_OK || response[1] != response_crc[0] ||
@@ -179,7 +189,7 @@ static void halt_card(spi_device_handle_t dev) {
     command[2] = crc[0];
     command[3] = crc[1];
     /* A successful HALT has no reply; false from transceive is expected. */
-    (void)transceive(dev, command, sizeof(command), 0, response, sizeof(response), &n, &bits);
+    (void)transceive(dev, command, sizeof(command), 0, response, sizeof(response), &n, &bits, NULL);
 }
 
 esp_err_t mfrc522_init(void) {
@@ -234,8 +244,10 @@ bool mfrc522_poll(uint8_t reader, uint8_t *uid, uint8_t *uid_size) {
     uint8_t atqa[2], bits = 0;
     size_t n = 0;
     uint8_t request = PICC_REQA;
-    if (!transceive(devices[reader], &request, 1, 7, atqa, sizeof(atqa), &n, &bits)) {
-        log_poll_issue(reader, "no card response to REQA");
+    bool timed_out;
+    if (!transceive(devices[reader], &request, 1, 7, atqa, sizeof(atqa), &n, &bits, &timed_out)) {
+        /* No card (or a previously halted card) is normal, not a reader fault. */
+        if (!timed_out) log_poll_issue(reader, "RFID request failed: SPI or reader error");
         return false;
     }
     if (n != 2) {
@@ -252,7 +264,7 @@ bool mfrc522_poll(uint8_t reader, uint8_t *uid, uint8_t *uid_size) {
     for (unsigned level = 0; level < 3; level++) {
         uint8_t anticoll[2] = {sels[level], 0x20}, block[5], rx_bits = 0;
         size_t rx_n = 0;
-        if (!transceive(devices[reader], anticoll, 2, 0, block, sizeof(block), &rx_n, &rx_bits)) {
+        if (!transceive(devices[reader], anticoll, 2, 0, block, sizeof(block), &rx_n, &rx_bits, NULL)) {
             log_poll_issue(reader, "UID anti-collision received no reply");
             return false;
         }

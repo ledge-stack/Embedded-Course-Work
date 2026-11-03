@@ -1,5 +1,7 @@
 # Direct project fixes — 2 November 2026
 
+Historical record: superseded for architecture/line counts by SIMPLIFICATION.md.
+
 These changes were applied to this repository's working files, not only to a
 separate review copy. They have not been committed or pushed by this workflow.
 

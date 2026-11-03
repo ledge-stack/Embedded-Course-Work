@@ -1,5 +1,3 @@
-# Trevor — room module interface
+# rooms
 
-This ESP-IDF component is a compatibility boundary for Trevor's implementation
-in `components/trevor/`. Keep room behavior in the Trevor component so there is
-one implementation and one state owner.
+Compatibility ESP-IDF component alias for the two room tasks implemented under components/trevor. No duplicate lighting logic lives here.
