@@ -92,7 +92,8 @@ entry.
   and `C` prints a read-only roll-call to the serial console.
 - Enter `2468` and press `#` to log in. In the admin menu, `1` sets the opening
   time, `2` sets the closing time, `3` pages through registered people and
-  their current inside state, and `4` pages through the latest access attempts.
+  their current inside state, `4` pages through the latest access attempts, and
+  `5` confirms the building is empty after a physical check.
 - Enter the new time as four digits in `HHMM` form and press `#`; for example,
   `0730` means 7:30. `*` clears input and `D` cancels or logs out.
 - The schedule API validates the value, saves accepted hours to NVS, updates

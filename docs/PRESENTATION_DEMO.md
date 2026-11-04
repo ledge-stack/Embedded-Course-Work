@@ -15,9 +15,9 @@ with SNTP; wait for the `SNTP synchronized` serial log before presenting an
 entry card. The LCD reports open/closed state, access hours, the last event and
 current occupancy.
 
-After a reboot the live inside list is volatile, so the display marks occupancy
-uncertain. Physically check that the building is empty, then use the UART0 CLI
-command `login 2468` followed by `confirm-empty` before demonstrating the
+The live inside list starts empty, so the display begins with confirmed zero
+occupancy. If a simulated tailgate alert is triggered, use the UART0 CLI command
+`login 2468` followed by `confirm-empty` before demonstrating the
 room-lights-off-at-zero rule.
 
 ## Demonstrate access and occupancy
@@ -86,6 +86,9 @@ not unlock a door. Feature limits are in
    welcome, goodbye, or denial with the member's call name and entry/exit time.
    The keypad and dashboard show up to eight scans from the current boot; the
    full saved history is available with the serial `records` command.
+6. Press `5` after physically checking that the building is empty to clear an
+   occupancy-uncertain state. The keypad confirms the action only when nobody
+   is recorded inside.
 
 ## Change the schedule over Wi-Fi
 

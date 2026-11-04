@@ -392,7 +392,7 @@ static void display_task(void *arg) {
                     snprintf(rows[2], 21, "AFTER-HOURS ALERT");
                     snprintf(rows[3], 21, "Still inside: %u", (unsigned)status.inside_count);
                 } else {
-                    snprintf(rows[2], 21, "Waiting for RFID...");
+                    snprintf(rows[2], 21, "Building empty");
                     snprintf(rows[3], 21, "Inside: %u", (unsigned)status.inside_count);
                 }
             }
@@ -414,8 +414,8 @@ esp_err_t entrance_runtime_start(void) {
     if (!state_mutex)
         return ESP_ERR_NO_MEM;
     entrance_state_init(&state);
-    /* The live inside list is not saved; require a physical empty-building check. */
-    occupancy_uncertain = true;
+    /* A fresh simulation starts with an empty building; alerts can mark it uncertain later. */
+    occupancy_uncertain = false;
     load_schedule();
     auth_runtime_init();
     esp_err_t e = mfrc522_init();

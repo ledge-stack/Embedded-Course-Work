@@ -78,7 +78,7 @@ static void begin_time_entry(enum ui_mode target) {
 }
 
 static void show_admin_menu(void) {
-    screen_set("ADMIN MENU", "1 Open  2 Close", "3 People 4 Activity", "D Logout");
+    screen_set("ADMIN MENU", "1 Open  2 Close", "3 People 4 Activity", "5 Empty  D Logout");
 }
 
 static void show_people_page(void) {
@@ -264,6 +264,17 @@ static void handle_key(char key) {
             activity_page = 0;
             xSemaphoreGive(ui_mutex);
             show_activity_page();
+            return;
+        }
+        if (key == '5') {
+            mode = UI_MESSAGE;
+            message_until = now + 2500;
+            screen_set("CHECKING EMPTY", "Please wait", "", "");
+            xSemaphoreGive(ui_mutex);
+            if (entrance_runtime_confirm_empty() == ESP_OK)
+                show_message("OCCUPANCY CONFIRMED", "Building marked empty", "Press any key", "");
+            else
+                show_message("NOT CONFIRMED", "People still recorded", "Check building first", "");
             return;
         }
         if (key == 'D' || key == '*') {
